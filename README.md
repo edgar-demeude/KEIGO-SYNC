@@ -79,3 +79,10 @@ KEIGO-SYNC differentiates itself from existing AI alignment research (which is p
 2.  **Specific Failure Mode:** Focusing specifically on **Sycophancy Traps** rather than general toxicity or filter bypass (Jailbreaking).
 
 This approach creates a novel and culturally aware evaluation framework for AI safety beyond standard benchmarks.
+
+## Repository organisation
+- *data* : Benchmarks of prompts
+- *src* : 
+    - *loaders* to charge benchmark
+    - *llm_clients* to send prompts to the chosen LLM models
+    - *metrics_calculators* to compute evaluation metrics
