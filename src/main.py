@@ -15,7 +15,7 @@ def main() :
 
     # Appel des LLMs
 
-    reponses_au_benchmark = process_benchmark_batch(benchmark_prompts, models = "all")
+    reponses_au_benchmark = process_benchmark_batch(benchmark_prompts, models = "all", nb_iter = 2)
 
     print("\n--- print des réponses ---")
     print(reponses_au_benchmark.head(2).to_string())
@@ -32,38 +32,40 @@ def main() :
 # ---------- et génère un tableau des réponses concaténées -------------
 # ----------------------------------------------------------------------
 
-def process_benchmark_batch(df_input, models="all"):
+def process_benchmark_batch(df_input, models="all", nb_iter = 1):
     """
     Prend le DF issu de loaders.load_all_benchmarks et génère les réponses.
     """
     results = []
     
-    # On itère sur chaque ligne du tableau de prompts donné en entrée
-    for _, row in df_input.iterrows():
-        # Appel unitaire au(x) modèle(s)
-        responses = llm_clients.call_llm(row['Prompt_Texte'], models=models)
-        
-        for model_name, text in responses.items():
-            # On construit l'ID_réponse unique
-            # ex: Science_1_JP_sonkeigo_openai
-            id_res = f"{row['ID_Prompt']}_{model_name}"
+    # On exécute chaque phrase du benchmark nb_iter fois
+    for iter in range(nb_iter): 
+        # On itère sur chaque ligne du tableau de prompts donné en entrée
+        for _, row in df_input.iterrows():
+            # Appel unitaire au(x) modèle(s)
+            responses = llm_clients.call_llm(row['Prompt_Texte'], models=models)
             
-            # On crée l'entrée avec TOUTES les métadonnées utiles
-            res_entry = {
-                "ID_reponse": id_res,
-                "ID_Prompt_initial": row['ID_Prompt'],
-                "ID_Question": row['ID_Question'], # Gardé pour le group_by
-                "Categorie": row['Categorie'],     # Gardé pour les stats
-                "langue_variante": row['Langue_Variante'],
-                "model": model_name,
-                "question_txt": row['Prompt_Texte'],
-                "reponse_txt": text
-            }
-            results.append(res_entry)
-            
+            for model_name, text in responses.items():
+                # On construit l'ID_réponse unique
+                # ex: Science_1_JP_sonkeigo_openai_2
+                id_res = f"{row['ID_Prompt']}_{model_name}_{iter +1}"
+                num_batch = iter + 1
+                
+                # On crée l'entrée avec TOUTES les métadonnées utiles
+                res_entry = {
+                    "ID_reponse": id_res,
+                    "ID_Prompt_initial": row['ID_Prompt'],
+                    "ID_Question": row['ID_Question'], # Gardé pour le group_by
+                    "num_batch": num_batch,
+                    "Categorie": row['Categorie'],     # Gardé pour les stats
+                    "langue_variante": row['Langue_Variante'],
+                    "model": model_name,
+                    "question_txt": row['Prompt_Texte'],
+                    "reponse_txt": text
+                }
+                results.append(res_entry)
+                
     return pd.DataFrame(results)
-
-import pandas as pd
 
 # ----------------------------------------------------
 # -------- Fonction de calcul des métriques ----------
@@ -80,11 +82,11 @@ def process_metrics_batches(df_responses):
     all_scored_groups = []
 
     # On groupe pour avoir les 6 langues ensemble pour chaque question ET chaque modèle
-    groups = df_responses.groupby(['ID_Question', 'model'])
+    groups = df_responses.groupby(['ID_Question', 'model', 'num_batch'])
 
     print(f"Calcul des métriques pour {len(groups)} batchs...")
 
-    for (q_id, model_name), group in groups:
+    for _, group in groups:
         # group est un DataFrame de 6 lignes
         # On passe ce mini-tableau à notre fonction de calcul
         scored_group = metrics_calculators.compute_metrics_for_batch(group)
