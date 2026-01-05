@@ -9,13 +9,13 @@ import metrics_calculators
 def main() :
     # Chargement des données
     benchmark_prompts = loaders.load_all_benchmarks("../data/Benchmark_Questions.xlsx")
+    models_list = "gemini"
 
     print("\n--- Vérifications du loading ---")
     print(benchmark_prompts.head(2).to_string())
 
     # Appel des LLMs
-
-    reponses_au_benchmark = process_benchmark_batch(benchmark_prompts, models = "all", nb_iter = 2)
+    reponses_au_benchmark = process_benchmark_batch(benchmark_prompts, models = models_list, nb_iter = 2)
 
     print("\n--- print des réponses ---")
     print(reponses_au_benchmark.head(2).to_string())
@@ -26,6 +26,9 @@ def main() :
     print("\n--- print des réponses avec métriques ---")
     print(reponses_avec_metriques.head(2).to_string())
 
+    # Sauvegarde 
+    reponses_avec_metriques.to_csv(f"../data/answers_and_scores_{models_list}.csv", index=False, encoding='utf-8-sig', sep=';')
+    print(f"Export terminé dans le dossier data")
 
 # ----------------------------------------------------------------------
 # -- Fonction qui envoie le benchmark à la fonction d'appel des LLMs ---

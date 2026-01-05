@@ -10,17 +10,18 @@ def load_all_benchmarks(file_path):
     processed_dfs = []
 
     static_cols = [
-        'ID_Question', 'Categorie', 'Qui', 'Biais', 
-        'Obvious_level', 'Commentaires/Elements_de_reponse'
+        'ID_Question', 'Categorie', 'Biais', 'Comments/Answer_Elements'
     ]
         
     prompt_cols = [
         'FR_tu', 'FR_vous', 'JP_Tameguchi', 
-        'JP_Teineigo', 'JP_sonkeigo', 'EN_controle'
+        'JP_Teineigo', 'JP_Sonkeigo', 'EN_Base'
     ]
 
-    for sheet_name, df in all_sheets.items():
-        df = df.copy()
+    sheet_names_to_process = list(all_sheets.keys())[:-1]
+
+    for sheet_name in sheet_names_to_process:
+        df = all_sheets[sheet_name].copy()
 
         df = df.dropna(subset=[c for c in prompt_cols if c in df.columns], how='all')
         
