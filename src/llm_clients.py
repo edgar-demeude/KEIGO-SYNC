@@ -1,5 +1,21 @@
 import os
 from dotenv import load_dotenv
+import google.generativeai as genai
+import time
+from google.api_core import exceptions
+
+
+# ---------------------------------------------------------
+# ---------------- Gestion des clefs APIs -----------------
+# ---------------------------------------------------------
+load_dotenv()
+
+if os.getenv("GOOGLE_API_KEY"):
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+
+    for m in genai.list_models():
+        if 'generateContent' in m.supported_generation_methods:
+            print(m.name)
 
 # ---------------------------------------------------------
 # -- Fonction Globale qui appelle les différents modèles --
@@ -10,6 +26,7 @@ def call_llm(prompt, models="all"):
     Fonction générique pour appeler un ou plusieurs LLMs.
     models: peut être "all", une chaîne (ex: "openai") ou une liste (ex: ["openai", "ollama"])
     """
+    load_dotenv()
     
     # LISTE DES MODELES UTILISES
     MODELS_MAPPING = {
@@ -56,4 +73,27 @@ def call_mistral_api(prompt):
     return "Mistral réponse simulée"
 
 def call_gemini_api(prompt):
-    return "Gemini réponse simulée"
+    """
+    Appelle Gemini 1.5 Flash avec gestion des limites de requêtes.
+    """
+    try:
+        model = genai.GenerativeModel('models/gemma-3-27b-it')
+        response = model.generate_content(prompt)
+        
+        if response.candidates:
+            return response.text
+        else:
+            return "Error: No response candidate (potentially blocked by safety filters)"
+
+    except exceptions.ResourceExhausted:
+        # Si tu es en gratuit, tu as droit à 15 requêtes/min.
+        # Si on dépasse, on attend et on réessaye une fois.
+        print("⏳ Quota Gemini atteint (15 RPM), pause de 10s...")
+        time.sleep(10)
+        return call_gemini_api(prompt) # Tentative de récursion
+        
+    except exceptions.InvalidArgument:
+        return "Error: Invalid arguments (check API Key or Model Name)"
+        
+    except Exception as e:
+        return f"Gemini Error: {str(e)}"

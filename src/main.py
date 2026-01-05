@@ -11,6 +11,8 @@ def main() :
     benchmark_prompts = loaders.load_all_benchmarks("../data/Benchmark_Questions.xlsx")
     models_list = "gemini"
 
+    benchmark_prompts = benchmark_prompts.head(30)
+
     print("\n--- Vérifications du loading ---")
     print(benchmark_prompts.head(2).to_string())
 
@@ -27,7 +29,7 @@ def main() :
     print(reponses_avec_metriques.head(2).to_string())
 
     # Sauvegarde 
-    reponses_avec_metriques.to_csv(f"../data/answers_and_scores_{models_list}.csv", index=False, encoding='utf-8-sig', sep=';')
+    reponses_avec_metriques.to_csv(f"../data/answers_and_scores_{models_list}.csv", index=False, encoding='utf-8-sig', sep='||')
     print(f"Export terminé dans le dossier data")
 
 # ----------------------------------------------------------------------
