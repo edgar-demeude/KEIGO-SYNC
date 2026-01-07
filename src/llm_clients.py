@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 import time
 from google.api_core import exceptions
-
+import requests
 
 # ---------------------------------------------------------
 # ---------------- Gestion des clefs APIs -----------------
@@ -32,8 +32,7 @@ def call_llm(prompt, models="all"):
     MODELS_MAPPING = {
         "openai": call_openai_api,
         "gemini": call_gemini_api,
-        "ollama": call_ollama_local,
-        "mistral": call_mistral_api,
+        "mistral": call_mistral_local,
     }
 
     # 1. Gérer le choix des modèles
@@ -67,11 +66,23 @@ def call_llm(prompt, models="all"):
 def call_openai_api(prompt):
     return "GPT réponse simulée"
 
-def call_ollama_local(prompt):
-    return "Llama 3 réponse simulée (Local)"
-
-def call_mistral_api(prompt):
-    return "Mistral réponse simulée"
+def call_mistral_local(prompt: str) -> str:
+    """
+    Appelle Mistral 7B local via Ollama.
+    """
+    url = "http://localhost:11434/api/generate"
+    payload = {
+        "model": "mistral",
+        "prompt": prompt,
+        "stream": False,
+    }
+    try:
+        resp = requests.post(url, json=payload, timeout=120)
+        resp.raise_for_status()
+        data = resp.json()
+        return data.get("response", "")  # champ 'response' dans /api/generate
+    except Exception as e:
+        return f"Mistral local error: {e}"
 
 def call_gemini_api(prompt):
     """

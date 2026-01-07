@@ -1,82 +1,122 @@
 import pandas as pd
 import os
 
-
 import llm_clients
 import loaders
 import metrics_calculators
 
-def main() :
+def main():
     # Chargement des données
     benchmark_prompts = loaders.load_all_benchmarks("../data/Benchmark_Questions.xlsx")
-    models_list = "gemini"
+    models_list = "mistral"
 
-    print("\n--- Vérifications du loading ---")
-    print(f"size = {benchmark_prompts.shape}")
+    print("\n========== CHARGEMENT DU BENCHMARK ==========")
+    print(f"Nombre total de lignes : {len(benchmark_prompts)}")
     print(benchmark_prompts.head(2).to_string())
 
-    # Appel des LLMs
-    print("\n--- Appel des LLMs ---")
+    # Paramètres de run
     nb_iter = 3
-    reponses_au_benchmark = process_benchmark_batch(benchmark_prompts, models = models_list, nb_iter = nb_iter)
+    nb_questions = 4  # -1 pour tout traiter, >0 pour limiter
 
-    print("\n--- Vérification des réponses ---")
+    print("\n========== PARAMÈTRES D'EXÉCUTION ==========")
+    print(f"Modèles              : {models_list}")
+    print(f"Nombre d'itérations  : {nb_iter}")
+    print(f"Nombre de questions  : {nb_questions}")
+
+    # Appel des LLMs
+    print("\n========== APPEL DES LLM ==========")
+    reponses_au_benchmark = process_benchmark_batch(
+        benchmark_prompts,
+        models=models_list,
+        nb_iter=nb_iter,
+        nb_questions=nb_questions,
+    )
+
+    print("\n---------- APERÇU DES RÉPONSES (brut LLM) ----------")
     print(reponses_au_benchmark.head(2).to_string())
 
     # Appel du LLM d'embedding
-    print("\n--- Appel du LLM d'embeddings ---")
+    print("\n========== CALCUL DES EMBEDDINGS ==========")
     reponses_avec_embeddings = compute_embeddings_batch(reponses_au_benchmark)
 
-    print("\n--- Vérification des embeddings (taille) ---")
+    print("\n---------- APERÇU DES EMBEDDINGS (taille) ----------")
     print(reponses_avec_embeddings["reponse_emb"].head(2).apply(len))
 
     # Calcul des métriques
+    print("\n========== CALCUL DES MÉTRIQUES ==========")
     reponses_avec_metriques = process_metrics_batches(reponses_avec_embeddings)
-    print("\n--- Vérification des réponses avec métriques ---")
+
+    print("\n---------- APERÇU DES RÉPONSES AVEC MÉTRIQUES ----------")
     print(reponses_avec_metriques.head(2).to_string())
 
-    # Sauvegarde 
-    reponses_avec_metriques.to_json(f"../data/answers_and_scores_{models_list}_x{nb_iter}.json", orient='records', force_ascii=False)
-    print(f"Export terminé dans le dossier data")
+    # Sauvegarde
+    output_path = f"../data/answers_and_scores_{models_list}_x{nb_iter}.json"
+    reponses_avec_metriques.to_json(
+        output_path,
+        orient="records",
+        force_ascii=False
+    )
+
+    print("\n========== EXPORT TERMINÉ ==========")
+    print(f"Fichier écrit : {output_path}")
 
 # ----------------------------------------------------------------------
 # -- Fonction qui envoie le benchmark à la fonction d'appel des LLMs ---
 # ---------- et génère un tableau des réponses concaténées -------------
 # ----------------------------------------------------------------------
 
-def process_benchmark_batch(df_input, models="all", nb_iter = 1):
+def process_benchmark_batch(df_input, models="all", nb_iter=1, nb_questions=-1):
     """
     Prend le DF issu de loaders.load_all_benchmarks et génère les réponses.
+    nb_questions = -1 -> traite tout le DataFrame
+    nb_questions > 0  -> ne traite que les nb_questions premières lignes
     """
+    # Sélection du sous-ensemble de questions
+    if nb_questions != -1:
+        df_input = df_input.head(nb_questions)
+
+    total_questions = len(df_input)
+    print(f"\n[INFO] Questions à traiter : {total_questions} (nb_iter = {nb_iter})")
+
     results = []
-    
+
     # On exécute chaque phrase du benchmark nb_iter fois
-    for iter in range(nb_iter): 
+    for iter_idx in range(nb_iter):
+        batch_id = iter_idx + 1
+        print(f"\n[ITERATION {batch_id}/{nb_iter}] Début du traitement des questions")
+
         # On itère sur chaque ligne du tableau de prompts donné en entrée
-        for _, row in df_input.iterrows():
+        for q_idx, (_, row) in enumerate(df_input.iterrows(), start=1):
             # Appel unitaire au(x) modèle(s)
-            responses = llm_clients.call_llm(row['Prompt_Texte'], models=models)
-            
+            responses = llm_clients.call_llm(row["Prompt_Texte"], models=models)
+
             for model_name, text in responses.items():
                 # On construit l'ID_réponse unique
-                # ex: Science_1_JP_sonkeigo_openai_2
-                id_res = f"{row['ID_Prompt']}_{model_name}_{iter +1}"
-                num_batch = iter + 1
-                
+                id_res = f"{row['ID_Prompt']}_{model_name}_{batch_id}"
+
+                # LOG de progression sur une seule ligne
+                print(
+                    f"[iter {batch_id}/{nb_iter}] "
+                    f"question {q_idx}/{total_questions} "
+                    f"modèle={model_name} "
+                    f"ID_Prompt={row['ID_Prompt']} -> réponse OK"
+                )
+
                 # On crée l'entrée avec TOUTES les métadonnées utiles
                 res_entry = {
                     "ID_reponse": id_res,
-                    "ID_Prompt_initial": row['ID_Prompt'],
-                    "ID_Question": row['ID_Question'], # Gardé pour le group_by
-                    "num_batch": num_batch,
-                    "Categorie": row['Categorie'],     # Gardé pour les stats
-                    "langue_variante": row['Langue_Variante'],
+                    "ID_Prompt_initial": row["ID_Prompt"],
+                    "ID_Question": row["ID_Question"],
+                    "num_batch": batch_id,
+                    "Categorie": row["Categorie"],
+                    "langue_variante": row["Langue_Variante"],
                     "model": model_name,
-                    "question_txt": row['Prompt_Texte'],
-                    "reponse_txt": text
+                    "question_txt": row["Prompt_Texte"],
+                    "reponse_txt": text,
                 }
+
                 results.append(res_entry)
-                
+
     return pd.DataFrame(results)
 
 # ----------------------------------------------------------------------
