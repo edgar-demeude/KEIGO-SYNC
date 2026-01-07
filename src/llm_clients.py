@@ -6,6 +6,7 @@ import time
 from google.api_core import exceptions
 import requests
 from datetime import datetime
+from zai import ZaiClient
 
 
 # ---------------------------------------------------------
@@ -13,11 +14,8 @@ from datetime import datetime
 # ---------------------------------------------------------
 load_dotenv()
 
-# CONFIG: rate limits
-SESSION_REQUEST_COUNT = 0
-MAX_REQUESTS_PER_HOUR = 25
-SLEEP_DURATION = 3000  # 50 minutes
-
+ZAI_API_KEY = os.getenv("ZAI_API_KEY")  # Make sure your .env has this key
+client_zai = ZaiClient(api_key=ZAI_API_KEY)
 if os.getenv("GOOGLE_API_KEY"):
     genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
@@ -42,7 +40,7 @@ def call_llm(prompt, models="all"):
         "gemma": call_gemma_api,
         "mistral": call_mistral_local,
         "ministral-3b": call_ministral_local,
-        "glm": call_glm_local_with_retry,
+        "glm": call_glm46_sdk,
     }
 
     # 1. Gérer le choix des modèles
@@ -73,58 +71,24 @@ def call_llm(prompt, models="all"):
 # ---- Appels Spécifiques de chaque modèle ----
 # ---------------------------------------------
 
-def call_glm_local_with_retry(prompt: str) -> str:
-    global SESSION_REQUEST_COUNT
-
-    url = "http://localhost:11434/api/generate"
-    model_name = "glm-4.6:cloud"
+def call_glm46_sdk(prompt: str) -> str:
 
     while True:
-        # 1. Proactive Rate Limit Check
-        if SESSION_REQUEST_COUNT >= MAX_REQUESTS_PER_HOUR:
-            print(
-                f"\n[Limit Reached] Sent {SESSION_REQUEST_COUNT} requests. "
-                f"Sleeping for {SLEEP_DURATION/60:.1f} minutes..."
-            )
-            print(f"Time now: {datetime.now().strftime('%H:%M:%S')}")
-            time.sleep(SLEEP_DURATION)
-            SESSION_REQUEST_COUNT = 0
-            print("[Resuming] Waking up...")
-
-        # 2. Attempt Request
         try:
-            # Pour glm-4.6:cloud via Ollama, on utilise aussi /api/generate
-            payload = {
-                "model": model_name,
-                "prompt": str(prompt),
-                "stream": False,
-                "options": {
-                    "temperature": 0.0,
-                },
-            }
-
-            resp = requests.post(url, json=payload, timeout=300)
-
-            # Handle 429
-            if resp.status_code == 429:
-                print("\n[429 Error] Rate limit hit unexpectedly. Sleeping for 60 mins...")
-                time.sleep(3600)
-                SESSION_REQUEST_COUNT = 0
-                continue
-
-            resp.raise_for_status()
-            SESSION_REQUEST_COUNT += 1
-
-            data = resp.json()
-
-            text = data.get("response", "")
-            if not isinstance(text, str):
-                text = str(text)
-
-            return text
+            response = client_zai.chat.completions.create(
+                model="glm-4.6v-flash",
+                messages=[
+                    {"role": "system", "content": "You are a helpful AI assistant."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=512,
+                temperature=0.0
+            )
+            return response.choices[0].message.content
 
         except Exception as e:
-            print(f"\n[Error] {e}. Retrying in 60 seconds...")
+            # Catch 429 / Rate limit or other errors
+            print(f"[GLM Error] {e}. Retrying in 60 seconds...")
             time.sleep(60)
             continue
 
