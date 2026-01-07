@@ -80,7 +80,7 @@ def call_glm46_sdk(prompt: str) -> str:
                     {"role": "system", "content": "You are a helpful AI assistant."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=2048,
+                max_tokens=512,
                 temperature=0.0
             )
             return response.choices[0].message.content
