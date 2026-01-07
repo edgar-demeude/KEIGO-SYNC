@@ -33,6 +33,7 @@ def call_llm(prompt, models="all"):
         "openai": call_openai_api,
         "gemini": call_gemini_api,
         "mistral": call_mistral_local,
+        "ministral": call_ministral_local,
     }
 
     # 1. Gérer le choix des modèles
@@ -73,6 +74,27 @@ def call_mistral_local(prompt: str) -> str:
     url = "http://localhost:11434/api/generate"
     payload = {
         "model": "mistral",      # ou mistral:instruct
+        "prompt": prompt,
+        "stream": False,
+        "temperature": 0.0,   # / déterministe
+    }
+
+    try:
+        resp = requests.post(url, json=payload, timeout=120)
+        resp.raise_for_status()
+        data = resp.json()
+        # On normalise ici : on ne renvoie que le texte
+        return data.get("response", "")
+    except Exception as e:
+        return f"Mistral local error: {e}"
+    
+def call_ministral_local(prompt: str) -> str:
+    """
+    Appelle Ministral-3:8b local via Ollama.
+    """
+    url = "http://localhost:11434/api/generate"
+    payload = {
+        "model": "ministral-3:8b",      # ou mistral:instruct
         "prompt": prompt,
         "stream": False,
     }

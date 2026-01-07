@@ -8,7 +8,7 @@ import metrics_calculators
 def main():
     # Chargement des données
     benchmark_prompts = loaders.load_all_benchmarks("../data/Benchmark_Questions.xlsx")
-    models_list = "mistral"
+    models_list = "ministral"
 
     print("\n========== CHARGEMENT DU BENCHMARK ==========")
     print(f"Nombre total de lignes : {len(benchmark_prompts)}")
