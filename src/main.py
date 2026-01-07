@@ -27,7 +27,7 @@ def main():
     else:
         nb_iter = 3
 
-    nb_questions = 1  # -1 pour tout traiter, >0 pour limiter
+    nb_questions = -1  # -1 pour tout traiter, >0 pour limiter
 
     print("\n========== CHARGEMENT DU BENCHMARK ==========")
     print(f"Nombre total de lignes : {len(benchmark_prompts)}")
