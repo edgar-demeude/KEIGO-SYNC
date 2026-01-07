@@ -73,9 +73,6 @@ def call_llm(prompt, models="all"):
 # ---------------------------------------------
 
 def call_glm_local_with_retry(prompt: str) -> str:
-    """
-    Calls Ollama (GLM) with Resume & Sleep logic.
-    """
     global SESSION_REQUEST_COUNT
     url = "http://localhost:11434/api/chat"
     model_name = "glm-4.6:cloud"
@@ -94,12 +91,14 @@ def call_glm_local_with_retry(prompt: str) -> str:
             payload = {
                 "model": model_name,
                 "messages": [{"role": "user", "content": str(prompt)}],
-                "stream": False
+                "stream": False,
+                "options": {
+                    "temperature": 0.0
+                }
             }
-            # Set a timeout (GLM can be slow)
             resp = requests.post(url, json=payload, timeout=300)
             
-            # Handle 429 (Too Many Requests)
+            # Handle 429
             if resp.status_code == 429:
                 print(f"\n[429 Error] Rate limit hit unexpectedly. Sleeping for 60 mins...")
                 time.sleep(3600)
@@ -108,7 +107,6 @@ def call_glm_local_with_retry(prompt: str) -> str:
 
             resp.raise_for_status()
             
-            # Success
             SESSION_REQUEST_COUNT += 1
             return resp.json()["message"]["content"]
 
