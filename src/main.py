@@ -11,7 +11,7 @@ def main():
     benchmark_prompts = loaders.load_all_benchmarks("../data/Benchmark_Questions.xlsx")
 
     # Choix des modèles (chaîne ou liste)
-    models_list = "gemma"  # ["mistral", "gemma", "glm"]
+    models_list = "mistral"  # ["mistral", "gemma", "glm"]
 
     # Détermination des itérations en fonction des modèles
     # Ici : si au moins un modèle est configuré en temperature=0 (local), on fait 1 itération, sinon 3.
@@ -27,7 +27,7 @@ def main():
     else:
         nb_iter = 3
 
-    nb_questions = 1  # -1 pour tout traiter, >0 pour limiter
+    nb_questions = -1  # -1 pour tout traiter, >0 pour limiter
 
     print("\n========== CHARGEMENT DU BENCHMARK ==========")
     print(f"Nombre total de lignes : {len(benchmark_prompts)}")
