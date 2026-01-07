@@ -41,6 +41,7 @@ def call_llm(prompt, models="all"):
         "openai": call_openai_api,
         "gemma": call_gemma_api,
         "mistral": call_mistral_local,
+        "ministral-3b": call_ministral_local,
         "glm": call_glm_local_with_retry,
     }
 
@@ -137,7 +138,7 @@ def call_mistral_local(prompt: str) -> str:
     """
     url = "http://localhost:11434/api/generate"
     payload = {
-        "model": "mistral",      # ou mistral:instruct
+        "model": "mistral",
         "prompt": prompt,
         "stream": False,
         "temperature": 0.0,   # / déterministe
@@ -154,13 +155,14 @@ def call_mistral_local(prompt: str) -> str:
     
 def call_ministral_local(prompt: str) -> str:
     """
-    Appelle Ministral-3:8b local via Ollama.
+    Appelle ministral-3:8b local via Ollama.
     """
     url = "http://localhost:11434/api/generate"
     payload = {
-        "model": "ministral-3:8b",      # ou mistral:instruct
+        "model": "ministral-3:3b",
         "prompt": prompt,
         "stream": False,
+        "temperature": 0.0,   # / déterministe
     }
 
     try:
