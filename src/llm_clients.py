@@ -72,15 +72,17 @@ def call_mistral_local(prompt: str) -> str:
     """
     url = "http://localhost:11434/api/generate"
     payload = {
-        "model": "mistral",
+        "model": "mistral",      # ou mistral:instruct
         "prompt": prompt,
         "stream": False,
     }
+
     try:
         resp = requests.post(url, json=payload, timeout=120)
         resp.raise_for_status()
         data = resp.json()
-        return data.get("response", "")  # champ 'response' dans /api/generate
+        # On normalise ici : on ne renvoie que le texte
+        return data.get("response", "")
     except Exception as e:
         return f"Mistral local error: {e}"
 

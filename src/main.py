@@ -16,7 +16,7 @@ def main():
 
     # Paramètres de run
     nb_iter = 3
-    nb_questions = 4  # -1 pour tout traiter, >0 pour limiter
+    nb_questions = 1  # -1 pour tout traiter, >0 pour limiter
 
     print("\n========== PARAMÈTRES D'EXÉCUTION ==========")
     print(f"Modèles              : {models_list}")
@@ -54,7 +54,8 @@ def main():
     reponses_avec_metriques.to_json(
         output_path,
         orient="records",
-        force_ascii=False
+        force_ascii=False,
+        indent=2,
     )
 
     print("\n========== EXPORT TERMINÉ ==========")
