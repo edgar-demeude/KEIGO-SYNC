@@ -141,7 +141,12 @@ def call_gemma_api(prompt):
     Appelle Gemma_3_27b-it avec gestion des limites de requêtes.
     """
     try:
-        model = genai.GenerativeModel('models/gemma-3-27b-it')
+        model = genai.GenerativeModel(
+            "models/gemma-3-27b-it",
+            generation_config={
+                "temperature": 0.0,   # déterministe
+            },
+        )
         response = model.generate_content(prompt)
         
         if response.candidates:
