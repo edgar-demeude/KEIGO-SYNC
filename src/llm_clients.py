@@ -1,14 +1,22 @@
 import os
+import time
 from dotenv import load_dotenv
 import google.generativeai as genai
 import time
 from google.api_core import exceptions
 import requests
+from datetime import datetime
+
 
 # ---------------------------------------------------------
 # ---------------- Gestion des clefs APIs -----------------
 # ---------------------------------------------------------
 load_dotenv()
+
+# CONFIG: rate limits
+SESSION_REQUEST_COUNT = 0
+MAX_REQUESTS_PER_HOUR = 25
+SLEEP_DURATION = 3000  # 50 minutes
 
 if os.getenv("GOOGLE_API_KEY"):
     genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
@@ -31,9 +39,9 @@ def call_llm(prompt, models="all"):
     # LISTE DES MODELES UTILISES
     MODELS_MAPPING = {
         "openai": call_openai_api,
-        "gemini": call_gemini_api,
+        "gemma": call_gemma_api,
         "mistral": call_mistral_local,
-        "ministral": call_ministral_local,
+        "glm": call_glm_local_with_retry,
     }
 
     # 1. Gérer le choix des modèles
@@ -63,6 +71,62 @@ def call_llm(prompt, models="all"):
 # ---------------------------------------------
 # ---- Appels Spécifiques de chaque modèle ----
 # ---------------------------------------------
+
+def call_glm_local_with_retry(prompt: str) -> str:
+    global SESSION_REQUEST_COUNT
+
+    url = "http://localhost:11434/api/generate"
+    model_name = "glm-4.6:cloud"
+
+    while True:
+        # 1. Proactive Rate Limit Check
+        if SESSION_REQUEST_COUNT >= MAX_REQUESTS_PER_HOUR:
+            print(
+                f"\n[Limit Reached] Sent {SESSION_REQUEST_COUNT} requests. "
+                f"Sleeping for {SLEEP_DURATION/60:.1f} minutes..."
+            )
+            print(f"Time now: {datetime.now().strftime('%H:%M:%S')}")
+            time.sleep(SLEEP_DURATION)
+            SESSION_REQUEST_COUNT = 0
+            print("[Resuming] Waking up...")
+
+        # 2. Attempt Request
+        try:
+            # Pour glm-4.6:cloud via Ollama, on utilise aussi /api/generate
+            payload = {
+                "model": model_name,
+                "prompt": str(prompt),
+                "stream": False,
+                "options": {
+                    "temperature": 0.0,
+                },
+            }
+
+            resp = requests.post(url, json=payload, timeout=300)
+
+            # Handle 429
+            if resp.status_code == 429:
+                print("\n[429 Error] Rate limit hit unexpectedly. Sleeping for 60 mins...")
+                time.sleep(3600)
+                SESSION_REQUEST_COUNT = 0
+                continue
+
+            resp.raise_for_status()
+            SESSION_REQUEST_COUNT += 1
+
+            data = resp.json()
+
+            text = data.get("response", "")
+            if not isinstance(text, str):
+                text = str(text)
+
+            return text
+
+        except Exception as e:
+            print(f"\n[Error] {e}. Retrying in 60 seconds...")
+            time.sleep(60)
+            continue
+
 
 def call_openai_api(prompt):
     return "GPT réponse simulée"
@@ -108,7 +172,7 @@ def call_ministral_local(prompt: str) -> str:
     except Exception as e:
         return f"Mistral local error: {e}"
 
-def call_gemini_api(prompt):
+def call_gemma_api(prompt):
     """
     Appelle Gemma_3_27b-it avec gestion des limites de requêtes.
     """
@@ -124,15 +188,15 @@ def call_gemini_api(prompt):
     except exceptions.ResourceExhausted:
         # Si tu es en gratuit, tu as droit à 15 requêtes/min.
         # Si on dépasse, on attend et on réessaye une fois.
-        print("⏳ Quota Gemini atteint (15 RPM), pause de 10s...")
+        print("⏳ Quota Gemma atteint (15 RPM), pause de 10s...")
         time.sleep(10)
-        return call_gemini_api(prompt) # Tentative de récursion
+        return call_gemma_api(prompt) # Tentative de récursion
         
     except exceptions.InvalidArgument:
         return "Error: Invalid arguments (check API Key or Model Name)"
         
     except Exception as e:
-        return f"Gemini Error: {str(e)}"
+        return f"Gemma Error: {str(e)}"
 
 def call_embedding_model(answer):
     """

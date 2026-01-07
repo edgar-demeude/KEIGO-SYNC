@@ -5,18 +5,33 @@ import llm_clients
 import loaders
 import metrics_calculators
 
+
 def main():
     # Chargement des données
     benchmark_prompts = loaders.load_all_benchmarks("../data/Benchmark_Questions.xlsx")
-    models_list = "ministral"
+
+    # Choix des modèles (chaîne ou liste)
+    models_list = "glm"  # ex: "mistral", "gemma", ["mistral", "gemma"]
+
+    # Détermination des itérations en fonction des modèles
+    # Ici : si au moins un modèle est configuré en temperature=0 (local), on fait 1 itération, sinon 3.
+    zero_temp_models = {"mistral", "glm"}  # modèles dont l'implémentation met temperature = 0.0
+
+    if isinstance(models_list, str):
+        active_models = {models_list}
+    else:
+        active_models = set(models_list)
+
+    if active_models & zero_temp_models:
+        nb_iter = 1
+    else:
+        nb_iter = 3
+
+    nb_questions = 1  # -1 pour tout traiter, >0 pour limiter
 
     print("\n========== CHARGEMENT DU BENCHMARK ==========")
     print(f"Nombre total de lignes : {len(benchmark_prompts)}")
     print(benchmark_prompts.head(2).to_string())
-
-    # Paramètres de run
-    nb_iter = 3
-    nb_questions = 1  # -1 pour tout traiter, >0 pour limiter
 
     print("\n========== PARAMÈTRES D'EXÉCUTION ==========")
     print(f"Modèles              : {models_list}")
@@ -55,11 +70,12 @@ def main():
         output_path,
         orient="records",
         force_ascii=False,
-        indent=2,
+        indent=2,  # pour un JSON lisible
     )
 
     print("\n========== EXPORT TERMINÉ ==========")
     print(f"Fichier écrit : {output_path}")
+
 
 # ----------------------------------------------------------------------
 # -- Fonction qui envoie le benchmark à la fonction d'appel des LLMs ---
@@ -107,9 +123,9 @@ def process_benchmark_batch(df_input, models="all", nb_iter=1, nb_questions=-1):
                 res_entry = {
                     "ID_reponse": id_res,
                     "ID_Prompt_initial": row["ID_Prompt"],
-                    "ID_Question": row["ID_Question"],
+                    "ID_Question": row["ID_Question"],  # Gardé pour le group_by
                     "num_batch": batch_id,
-                    "Categorie": row["Categorie"],
+                    "Categorie": row["Categorie"],      # Gardé pour les stats
                     "langue_variante": row["Langue_Variante"],
                     "model": model_name,
                     "question_txt": row["Prompt_Texte"],
@@ -120,37 +136,36 @@ def process_benchmark_batch(df_input, models="all", nb_iter=1, nb_questions=-1):
 
     return pd.DataFrame(results)
 
+
 # ----------------------------------------------------------------------
 # ------------ Fonction qui envoie l'embedding des réponses ------------
 # -------------------- et le concatène au tableau ----------------------
 # ----------------------------------------------------------------------
-   
+
 def compute_embeddings_batch(df_input):
     """
     Parcourt le DataFrame et génère les embeddings pour chaque réponse.
     """
-
     df_input["reponse_emb"] = df_input["reponse_txt"].apply(llm_clients.call_embedding_model)
-    
     return df_input
+
 
 # ----------------------------------------------------
 # -------- Fonction de calcul des métriques ----------
-# ------- Par bacth de 6 car 6 "traductions" ---------
+# ------- Par batch de 6 car 6 "traductions" ---------
 # ----------------------------------------------------
 
 def process_metrics_batches(df_responses):
     """
     Prend le DataFrame des réponses, le groupe par Question et Modèle.
-    Les 6 réponses d'une question (différentes "langues") envoyées en même temps 
+    Les 6 réponses d'une question (différentes "langues") envoyées en même temps
     pour pouvoir calculer les scores relatifs.
     Renvoie le tableau complété.
     """
     all_scored_groups = []
 
     # On groupe pour avoir les X langues ensemble pour chaque question ET chaque modèle
-    groups = df_responses.groupby(['ID_Question', 'model', 'num_batch'])
-
+    groups = df_responses.groupby(["ID_Question", "model", "num_batch"])
     print(f"Calcul des métriques pour {len(groups)} batchs...")
 
     for _, group in groups:
@@ -162,6 +177,7 @@ def process_metrics_batches(df_responses):
     # On réassemble tout le monde
     df_final = pd.concat(all_scored_groups, ignore_index=True)
     return df_final
+
 
 if __name__ == "__main__":
     main()
