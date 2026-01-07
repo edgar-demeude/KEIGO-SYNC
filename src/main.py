@@ -11,25 +11,32 @@ def main() :
     benchmark_prompts = loaders.load_all_benchmarks("../data/Benchmark_Questions.xlsx")
     models_list = "gemini"
 
-    benchmark_prompts = benchmark_prompts.head(30)
-
     print("\n--- Vérifications du loading ---")
+    print(f"size = {benchmark_prompts.shape}")
     print(benchmark_prompts.head(2).to_string())
 
     # Appel des LLMs
-    reponses_au_benchmark = process_benchmark_batch(benchmark_prompts, models = models_list, nb_iter = 2)
+    print("\n--- Appel des LLMs ---")
+    nb_iter = 1
+    reponses_au_benchmark = process_benchmark_batch(benchmark_prompts, models = models_list, nb_iter = nb_iter)
 
-    print("\n--- print des réponses ---")
+    print("\n--- Vérification des réponses ---")
     print(reponses_au_benchmark.head(2).to_string())
 
-    # Calcul des métriques
+    # Appel du LLM d'embedding
+    print("\n--- Appel du LLM d'embeddings ---")
+    reponses_avec_embeddings = compute_embeddings_batch(reponses_au_benchmark)
 
-    reponses_avec_metriques = process_metrics_batches(reponses_au_benchmark)
-    print("\n--- print des réponses avec métriques ---")
+    print("\n--- Vérification des embeddings (taille) ---")
+    print(reponses_avec_embeddings["reponse_emb"].head(2).apply(len))
+
+    # Calcul des métriques
+    reponses_avec_metriques = process_metrics_batches(reponses_avec_embeddings)
+    print("\n--- Vérification des réponses avec métriques ---")
     print(reponses_avec_metriques.head(2).to_string())
 
     # Sauvegarde 
-    reponses_avec_metriques.to_csv(f"../data/answers_and_scores_{models_list}.csv", index=False, encoding='utf-8-sig', sep='||')
+    reponses_avec_metriques.to_json(f"../data/answers_and_scores_{models_list}_x{nb_iter}.json", orient='records', force_ascii=False)
     print(f"Export terminé dans le dossier data")
 
 # ----------------------------------------------------------------------
@@ -72,6 +79,20 @@ def process_benchmark_batch(df_input, models="all", nb_iter = 1):
                 
     return pd.DataFrame(results)
 
+# ----------------------------------------------------------------------
+# ------------ Fonction qui envoie l'embedding des réponses ------------
+# -------------------- et le concatène au tableau ----------------------
+# ----------------------------------------------------------------------
+   
+def compute_embeddings_batch(df_input):
+    """
+    Parcourt le DataFrame et génère les embeddings pour chaque réponse.
+    """
+
+    df_input["reponse_emb"] = df_input["reponse_txt"].apply(llm_clients.call_embedding_model)
+    
+    return df_input
+
 # ----------------------------------------------------
 # -------- Fonction de calcul des métriques ----------
 # ------- Par bacth de 6 car 6 "traductions" ---------
@@ -86,7 +107,7 @@ def process_metrics_batches(df_responses):
     """
     all_scored_groups = []
 
-    # On groupe pour avoir les 6 langues ensemble pour chaque question ET chaque modèle
+    # On groupe pour avoir les X langues ensemble pour chaque question ET chaque modèle
     groups = df_responses.groupby(['ID_Question', 'model', 'num_batch'])
 
     print(f"Calcul des métriques pour {len(groups)} batchs...")

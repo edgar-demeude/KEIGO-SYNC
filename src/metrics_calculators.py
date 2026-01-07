@@ -1,6 +1,7 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
+import numpy as np
 import re
 import os
 from dotenv import load_dotenv
@@ -30,16 +31,19 @@ def compute_metrics_for_batch(batch_df, params=None):
         'llm_as_a_judge': []
     }
 
-    # Texte de référence pour le calcul du cosine similarity : l'anglais
+    # Embedding de référence pour le calcul du cosine similarity : l'anglais
     try:
-        ref_series = batch_df.loc[batch_df['langue_variante'] == 'EN_controle', 'reponse_txt']
-        ref_text = str(ref_series.values[0]) if not ref_series.empty else ""
+        ref_series = batch_df.loc[batch_df['langue_variante'] == 'EN_Base', 'reponse_emb']
+        ref_emb = ref_series.values[0]
     except Exception:
-        ref_text = ""
+        ref_emb = None
+
+    print(f"Ref emb : {ref_emb}")
 
     # --- Calcul des différentes métriques ---
     for _, row in batch_df.iterrows():
         text = str(row['reponse_txt'])
+        emb = row['reponse_emb']
         lang = row['langue_variante']
         
         
@@ -48,7 +52,7 @@ def compute_metrics_for_batch(batch_df, params=None):
         results['avg_sentence_len'].append(_calc_avg_sentence_len(text))
         results['formality_ratio'].append(_calc_formality_ratio(text, lang))
         
-        results['cosine_similarity'].append(_calc_cosine_similarity(text, ref_text))
+        results['cosine_similarity'].append(_calc_cosine_similarity(emb, ref_emb))
         
         # LLM judge doit être calculé en premier car refusal_rate dépend de lui
         llm_judge_score = _calc_llm_judge(row, params)
@@ -153,28 +157,27 @@ def _calc_formality_ratio(text, lang):
 
 # --- Content Metrics ---
 
-def _calc_cosine_similarity(text, ref_text):
+def _calc_cosine_similarity(emb, ref_emb):
     """
-    Compare 'reponse_txt' avec le texte de référence (EN_controle).
+    Compare 'reponse_emb' avec l'embedding de référence (EN_controle).
     Retourne un score de similarité entre 0 et 1.
     """
-    if not text or text == 'nan' or not ref_text or ref_text == 'nan':
+
+    if not isinstance(emb, list) or not isinstance(ref_emb, list):
         return 0.0
     
-    try:
-        # Créer un vectorizer TF-IDF
-        vectorizer = TfidfVectorizer()
-        
-        # Vectoriser les deux textes
-        tfidf_matrix = vectorizer.fit_transform([text, ref_text])
-        
-        # Calculer la similarité cosinus
-        similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
-        
-        return round(float(similarity), 4)
-    except (ValueError, AttributeError, IndexError):
-        # En cas d'erreur (par exemple, texte trop court), retourner 0
+    v1 = np.array(emb)
+    v2 = np.array(ref_emb)
+    
+    # Formule du Cosine Similarity : (A . B) / (||A|| * ||B||)
+    norm_v1 = np.linalg.norm(v1)
+    norm_v2 = np.linalg.norm(v2)
+    
+    if norm_v1 == 0 or norm_v2 == 0:
         return 0.0
+        
+    cosine_similarity = np.dot(v1, v2) / (norm_v1 * norm_v2)
+    return cosine_similarity
 
 def _calc_refusal_rate(llm_judge_score):
     """

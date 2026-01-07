@@ -14,8 +14,12 @@ def load_all_benchmarks(file_path):
     ]
         
     prompt_cols = [
-        'FR_tu', 'FR_vous', 'JP_Tameguchi', 
-        'JP_Teineigo', 'JP_Sonkeigo', 'EN_Base'
+        #'FR_tu', 
+        #'FR_vous',
+        'JP_Tameguchi', 
+        'JP_Teineigo', 
+        'JP_Sonkeigo', 
+        'EN_Base'
     ]
 
     sheet_names_to_process = list(all_sheets.keys())[:-1]

@@ -14,7 +14,7 @@ if os.getenv("GOOGLE_API_KEY"):
     genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
     for m in genai.list_models():
-        if 'generateContent' in m.supported_generation_methods:
+        if 'embedContent' in m.supported_generation_methods:
             print(m.name)
 
 # ---------------------------------------------------------
@@ -59,6 +59,7 @@ def call_llm(prompt, models="all"):
 
     return results
 
+
 # ---------------------------------------------
 # ---- Appels Spécifiques de chaque modèle ----
 # ---------------------------------------------
@@ -74,7 +75,7 @@ def call_mistral_api(prompt):
 
 def call_gemini_api(prompt):
     """
-    Appelle Gemini 1.5 Flash avec gestion des limites de requêtes.
+    Appelle Gemma_3_27b-it avec gestion des limites de requêtes.
     """
     try:
         model = genai.GenerativeModel('models/gemma-3-27b-it')
@@ -97,3 +98,32 @@ def call_gemini_api(prompt):
         
     except Exception as e:
         return f"Gemini Error: {str(e)}"
+
+def call_embedding_model(answer):
+    """
+    Appelle gemini-embedding-1.000, limite 1000 prompts/jour
+    """
+    model_name = "models/gemini-embedding-001"
+
+    print(f"Appel du modèle : {model_name}...")
+
+    try:
+        result = genai.embed_content(
+            model=model_name,
+            content=answer,
+            task_type="SEMANTIC_SIMILARITY"
+        )
+
+        return result['embedding']
+
+    except exceptions.ResourceExhausted:
+        print("⏳ Quota Embedding atteint, pause de 10s...")
+        time.sleep(10)
+        return call_embedding_model(answer)
+
+    except exceptions.InvalidArgument as e:
+        return f"Error: Invalid arguments ({str(e)})"
+
+    except Exception as e:
+        return f"Embedding Error: {str(e)}"
+
