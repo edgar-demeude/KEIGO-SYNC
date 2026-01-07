@@ -8,15 +8,15 @@ import metrics_calculators
 def main():
     # Chargement des données
     benchmark_prompts = loaders.load_all_benchmarks("../data/Benchmark_Questions.xlsx")
-    models_list = "mistral"
+    models_list = "glm-4.6:cloud"
 
     print("\n========== CHARGEMENT DU BENCHMARK ==========")
     print(f"Nombre total de lignes : {len(benchmark_prompts)}")
     print(benchmark_prompts.head(2).to_string())
 
     # Paramètres de run
-    nb_iter = 3
-    nb_questions = 1  # -1 pour tout traiter, >0 pour limiter
+    nb_iter = 1
+    nb_questions = -1  # -1 pour tout traiter, >0 pour limiter
 
     print("\n========== PARAMÈTRES D'EXÉCUTION ==========")
     print(f"Modèles              : {models_list}")
