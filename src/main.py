@@ -17,7 +17,7 @@ def main() :
 
     # Appel des LLMs
     print("\n--- Appel des LLMs ---")
-    nb_iter = 1
+    nb_iter = 3
     reponses_au_benchmark = process_benchmark_batch(benchmark_prompts, models = models_list, nb_iter = nb_iter)
 
     print("\n--- Vérification des réponses ---")
