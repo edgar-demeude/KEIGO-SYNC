@@ -11,7 +11,7 @@ def main():
     benchmark_prompts = loaders.load_all_benchmarks("../data/Benchmark_Questions.xlsx")
 
     # Choix des modèles (chaîne ou liste)
-    models_list = "ministral-3b"  # ["mistral", "ministral", "gemma", "glm"]
+    models_list = "gemma"  # ["mistral", "ministral", "gemma", "glm"]
 
     # Détermination des itérations en fonction des modèles
     # Ici : si au moins un modèle est configuré en temperature=0 (local), on fait 1 itération, sinon 3.
@@ -29,9 +29,16 @@ def main():
 
     nb_questions = -1  # -1 pour tout traiter, >0 pour limiter
 
+    # Configuration de l'affichage
+    pd.set_option('display.max_columns', None)      # Affiche Toutes les colonnes
+    pd.set_option('display.expand_frame_repr', False) # Ne pas revenir à la ligne
+    pd.set_option('display.max_colwidth', 50)       # Tronque le contenu à 50 caractères
+    pd.set_option('display.width', 2000)             # Autorise une ligne très large
+    pd.set_option('display.colheader_justify', 'left')
+
     print("\n========== CHARGEMENT DU BENCHMARK ==========")
     print(f"Nombre total de lignes : {len(benchmark_prompts)}")
-    print(benchmark_prompts.head(2).to_string())
+    print(benchmark_prompts.head(2))
 
     print("\n========== PARAMÈTRES D'EXÉCUTION ==========")
     print(f"Modèles              : {models_list}")
@@ -48,7 +55,7 @@ def main():
     )
 
     print("\n---------- APERÇU DES RÉPONSES (brut LLM) ----------")
-    print(reponses_au_benchmark.head(2).to_string())
+    print(reponses_au_benchmark.head(2))
 
     # Appel du LLM d'embedding
     print("\n========== CALCUL DES EMBEDDINGS ==========")
@@ -62,7 +69,7 @@ def main():
     reponses_avec_metriques = process_metrics_batches(reponses_avec_embeddings)
 
     print("\n---------- APERÇU DES RÉPONSES AVEC MÉTRIQUES ----------")
-    print(reponses_avec_metriques.head(2).to_string())
+    print(reponses_avec_metriques.head(2))
 
     # Sauvegarde
     output_path = f"../data/answers_and_scores_{models_list}_x{nb_iter}.json"

@@ -22,7 +22,7 @@ def load_all_benchmarks(file_path):
         'EN_Base'
     ]
 
-    sheet_names_to_process = list(all_sheets.keys())[:-1]
+    sheet_names_to_process = list(all_sheets.keys())
 
     for sheet_name in sheet_names_to_process:
         df = all_sheets[sheet_name].copy()

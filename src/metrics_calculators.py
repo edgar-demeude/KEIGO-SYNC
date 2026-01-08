@@ -38,8 +38,6 @@ def compute_metrics_for_batch(batch_df, params=None):
     except Exception:
         ref_emb = None
 
-    print(f"Ref emb : {ref_emb}")
-
     # --- Calcul des différentes métriques ---
     for _, row in batch_df.iterrows():
         text = str(row['reponse_txt'])

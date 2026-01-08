@@ -6,16 +6,21 @@ import time
 from google.api_core import exceptions
 import requests
 from datetime import datetime
-from zai import ZaiClient
-
+try:
+    from zai import ZaiClient
+    HAS_ZAI = True
+except ImportError:
+    ZaiClient = None
+    HAS_ZAI = False
 
 # ---------------------------------------------------------
 # ---------------- Gestion des clefs APIs -----------------
 # ---------------------------------------------------------
 load_dotenv()
 
-ZAI_API_KEY = os.getenv("ZAI_API_KEY")  # Make sure your .env has this key
-client_zai = ZaiClient(api_key=ZAI_API_KEY)
+if os.getenv("ZAI_API_KEY"):
+    ZAI_API_KEY = os.getenv("ZAI_API_KEY")  # Make sure your .env has this key
+    client_zai = ZaiClient(api_key=ZAI_API_KEY)
 if os.getenv("GOOGLE_API_KEY"):
     genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
