@@ -11,11 +11,11 @@ def main():
     benchmark_prompts = loaders.load_all_benchmarks("../data/Benchmark_Questions.xlsx")
 
     # Choix des modèles (chaîne ou liste)
-    models_list = "gemma"  # ["mistral", "ministral", "gemma", "glm"]
+    models_list = "qwen"  # ["mistral", "ministral", "gemma", "glm", "qwen"]
 
     # Détermination des itérations en fonction des modèles
     # Ici : si au moins un modèle est configuré en temperature=0 (local), on fait 1 itération, sinon 3.
-    zero_temp_models = {"mistral", "ministral-3b", "glm", "gemma"}  # modèles dont l'implémentation met temperature = 0.0
+    zero_temp_models = {"mistral", "ministral-3b", "glm", "gemma", "qwen"}  # modèles dont l'implémentation met temperature = 0.0
 
     if isinstance(models_list, str):
         active_models = {models_list}

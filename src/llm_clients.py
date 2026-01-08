@@ -13,6 +13,8 @@ except ImportError:
     ZaiClient = None
     HAS_ZAI = False
 
+
+
 # ---------------------------------------------------------
 # ---------------- Gestion des clefs APIs -----------------
 # ---------------------------------------------------------
@@ -46,6 +48,7 @@ def call_llm(prompt, models="all"):
         "mistral": call_mistral_local,
         "ministral-3b": call_ministral_local,
         "glm": call_glm46_sdk,
+        "qwen": call_qwen_local,
     }
 
     # 1. Gérer le choix des modèles
@@ -202,3 +205,28 @@ def call_embedding_model(answer):
     except Exception as e:
         return f"Embedding Error: {str(e)}"
 
+
+def call_qwen_local(prompt: str) -> str:
+    """
+    Appelle Qwen 2.5 Coder 7B local via Ollama.
+    """
+    url = "http://localhost:11434/api/generate"
+    
+    # Structure du payload adaptée à Ollama
+    payload = {
+        "model": "qwen2.5-coder:7b", # Assurez-vous d'avoir fait 'ollama pull qwen2.5-coder:7b'
+        "prompt": prompt,
+        "stream": False,
+        "options": {
+            "temperature": 0.0  # Déterministe
+        }
+    }
+
+    try:
+        # Utilisation de requests pour rester cohérent avec le reste du fichier
+        resp = requests.post(url, json=payload, timeout=120)
+        resp.raise_for_status()
+        data = resp.json()
+        return data.get("response", "").strip()
+    except Exception as e:
+        return f"Qwen local error: {e}"
