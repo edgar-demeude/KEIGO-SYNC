@@ -146,7 +146,7 @@ def call_glm46_sdk(prompt: str) -> str:
                     {"role": "user", "content": prompt},
                 ],
                 max_tokens=512,
-                temperature=0.0,
+                temperature=0.5,
             )
             return response.choices[0].message.content
         except Exception as e:
