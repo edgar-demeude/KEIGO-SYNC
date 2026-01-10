@@ -1,11 +1,13 @@
 import os
 import time
+from datetime import datetime
+from typing import Dict, Optional
+
 from dotenv import load_dotenv
 import google.generativeai as genai
-import time
 from google.api_core import exceptions
 import requests
-from datetime import datetime
+
 try:
     from zai import ZaiClient
     HAS_ZAI = True
@@ -13,220 +15,227 @@ except ImportError:
     ZaiClient = None
     HAS_ZAI = False
 
+# =============================================================================
+# Configuration & API Setup
+# =============================================================================
 
-
-# ---------------------------------------------------------
-# ---------------- Gestion des clefs APIs -----------------
-# ---------------------------------------------------------
 load_dotenv()
 
-if os.getenv("ZAI_API_KEY"):
-    ZAI_API_KEY = os.getenv("ZAI_API_KEY")  # Make sure your .env has this key
-    client_zai = ZaiClient(api_key=ZAI_API_KEY)
+# Google Generative AI (Gemini/Gemma)
 if os.getenv("GOOGLE_API_KEY"):
     genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-
     for m in genai.list_models():
-        if 'embedContent' in m.supported_generation_methods:
+        if "embedContent" in m.supported_generation_methods:
             print(m.name)
 
-# ---------------------------------------------------------
-# -- Fonction Globale qui appelle les différents modèles --
-# ---------------------------------------------------------
+# ZAI (for GLM models)
+if os.getenv("ZAI_API_KEY") and HAS_ZAI:
+    ZAI_API_KEY = os.getenv("ZAI_API_KEY")
+    client_zai = ZaiClient(api_key=ZAI_API_KEY)
 
-def call_llm(prompt, models="all"):
+# Local Ollama API
+OLLAMA_BASE_URL = "http://localhost:11434/api/generate"
+OLLAMA_TIMEOUT = 120
+
+# =============================================================================
+# Helper: Call local Ollama models (via REST API)
+# =============================================================================
+
+def call_ollama_model(
+    model_name: str,
+    prompt: str,
+    temperature: float = 0.0,
+    timeout: int = OLLAMA_TIMEOUT,
+) -> str:
     """
-    Fonction générique pour appeler un ou plusieurs LLMs.
-    models: peut être "all", une chaîne (ex: "openai") ou une liste (ex: ["openai", "ollama"])
-    """
-    load_dotenv()
+    Generic helper to call any Ollama model via /api/generate endpoint.
     
-    # LISTE DES MODELES UTILISES
-    MODELS_MAPPING = {
-        "openai": call_openai_api,
-        "gemma": call_gemma_api,
-        "mistral": call_mistral_local,
-        "ministral-3b": call_ministral_local,
-        "glm": call_glm46_sdk,
-        "qwen": call_qwen_local,
+    Args:
+        model_name: Ollama model identifier (e.g., "mistral", "ministral-3:3b")
+        prompt: Input text prompt
+        temperature: Generation temperature (0.0 = deterministic)
+        timeout: Request timeout in seconds
+    
+    Returns:
+        Generated text or error message
+    """
+    payload = {
+        "model": model_name,
+        "prompt": prompt,
+        "stream": False,
+        "temperature": temperature,
     }
 
-    # 1. Gérer le choix des modèles
-    if models == "all":
-        selected_models = list(MODELS_MAPPING.keys())
-    elif isinstance(models, str):
-        selected_models = [models]
-    else:
-        selected_models = models
-
-    results = {}
-
-    # 2. Boucler sur les modèles sélectionnés
-    for model_name in selected_models:
-        if model_name in MODELS_MAPPING:
-            print(f"Appel du modèle : {model_name}...")
-            # On appelle la fonction spécifique associée au nom
-            response = MODELS_MAPPING[model_name](prompt)
-            results[model_name] = response
-        else:
-            print(f"⚠️ Le modèle {model_name} n'est pas reconnu.")
-            results[model_name] = "Error: Model not found"
-
-    return results
+    try:
+        response = requests.post(OLLAMA_BASE_URL, json=payload, timeout=timeout)
+        response.raise_for_status()
+        data = response.json()
+        return data.get("response", "")
+    except Exception as e:
+        return f"{model_name} error: {str(e)}"
 
 
-# ---------------------------------------------
-# ---- Appels Spécifiques de chaque modèle ----
-# ---------------------------------------------
+# =============================================================================
+# Model-specific implementations
+# =============================================================================
+
+def call_mistral_local(prompt: str) -> str:
+    """Mistral 7B via Ollama (zero-shot, temp=0)."""
+    return call_ollama_model("mistral", prompt, temperature=0.0)
+
+
+def call_ministral3b_local(prompt: str) -> str:
+    """Ministral 3B via Ollama (zero-shot, temp=0)."""
+    return call_ollama_model("ministral-3:3b", prompt, temperature=0.0)
+
+
+def call_ministral8b_local(prompt: str) -> str:
+    """Ministral 8B via Ollama (zero-shot, temp=0)."""
+    return call_ollama_model("ministral-3:8b", prompt, temperature=0.0)
+
+
+def call_qwen_local(prompt: str) -> str:
+    """Qwen 2.5 Coder 7B via Ollama (zero-shot, temp=0)."""
+    return call_ollama_model("qwen2.5-coder:7b", prompt, temperature=0.0)
+
+def call_qwen2_5_local(prompt: str) -> str:
+    """Qwen 2.5 Instruct 7B via Ollama (zero-shot, temp=0)."""
+    return call_ollama_model("qwen2.5:7b-instruct", prompt, temperature=0.0)
+
+def call_llama3_2_3b_local(prompt: str) -> str:
+    """Llama 3.2 3B via Ollama (zero-shot, temp=0)."""
+    return call_ollama_model("llama3.2:3b", prompt, temperature=0.0)
+
+def call_gemma_api(prompt: str) -> str:
+    """
+    Gemma 3 27B (Google Generative AI API).
+    Handles rate limiting (15 RPM free tier).
+    """
+    try:
+        model = genai.GenerativeModel(
+            "models/gemma-3-27b-it",
+            generation_config={"temperature": 0.0},
+        )
+        response = model.generate_content(prompt)
+        if response.candidates:
+            return response.text
+        return "Error: No response candidate (safety filter)"
+    except exceptions.ResourceExhausted:
+        print("Rate limit reached (15 RPM). Waiting 10s...")
+        time.sleep(10)
+        return call_gemma_api(prompt)  # Retry once
+    except exceptions.InvalidArgument:
+        return "Error: Invalid arguments (check API key or model name)"
+    except Exception as e:
+        return f"Gemma error: {str(e)}"
+
 
 def call_glm46_sdk(prompt: str) -> str:
-
-    while True:
+    """
+    GLM-4.6 via ZAI SDK (with rate limit handling).
+    Retries indefinitely on error, waiting 60s between attempts.
+    """
+    max_retries = 3
+    for attempt in range(max_retries):
         try:
             response = client_zai.chat.completions.create(
                 model="glm-4.6v-flash",
                 messages=[
                     {"role": "system", "content": "You are a helpful AI assistant."},
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt},
                 ],
                 max_tokens=512,
-                temperature=0.0
+                temperature=0.0,
             )
             return response.choices[0].message.content
-
         except Exception as e:
-            # Catch 429 / Rate limit or other errors
-            print(f"[GLM Error] {e}. Retrying in 60 seconds...")
-            time.sleep(60)
-            continue
+            if attempt < max_retries - 1:
+                print(f"GLM error (attempt {attempt + 1}/{max_retries}): {e}. Retrying in 60s...")
+                time.sleep(60)
+            else:
+                return f"GLM error after {max_retries} attempts: {str(e)}"
 
 
-def call_openai_api(prompt):
-    return "GPT réponse simulée"
+def call_openai_api(prompt: str) -> str:
+    """Placeholder for OpenAI API."""
+    return "OpenAI simulated response"
 
-def call_mistral_local(prompt: str) -> str:
+
+def call_embedding_model(text: str) -> list:
     """
-    Appelle Mistral 7B local via Ollama.
+    Gemini Embedding 001 (Google Generative AI).
+    Used for semantic similarity tasks. Rate limited to 1000 requests/day.
     """
-    url = "http://localhost:11434/api/generate"
-    payload = {
-        "model": "mistral",
-        "prompt": prompt,
-        "stream": False,
-        "temperature": 0.0,   # / déterministe
-    }
-
-    try:
-        resp = requests.post(url, json=payload, timeout=120)
-        resp.raise_for_status()
-        data = resp.json()
-        # On normalise ici : on ne renvoie que le texte
-        return data.get("response", "")
-    except Exception as e:
-        return f"Mistral local error: {e}"
-    
-def call_ministral_local(prompt: str) -> str:
-    """
-    Appelle ministral-3:8b local via Ollama.
-    """
-    url = "http://localhost:11434/api/generate"
-    payload = {
-        "model": "ministral-3:3b",
-        "prompt": prompt,
-        "stream": False,
-        "temperature": 0.0,   # / déterministe
-    }
-
-    try:
-        resp = requests.post(url, json=payload, timeout=120)
-        resp.raise_for_status()
-        data = resp.json()
-        # On normalise ici : on ne renvoie que le texte
-        return data.get("response", "")
-    except Exception as e:
-        return f"Mistral local error: {e}"
-
-def call_gemma_api(prompt):
-    """
-    Appelle Gemma_3_27b-it avec gestion des limites de requêtes.
-    """
-    try:
-        model = genai.GenerativeModel(
-            "models/gemma-3-27b-it",
-            generation_config={
-                "temperature": 0.0,   # déterministe
-            },
-        )
-        response = model.generate_content(prompt)
-        
-        if response.candidates:
-            return response.text
-        else:
-            return "Error: No response candidate (potentially blocked by safety filters)"
-
-    except exceptions.ResourceExhausted:
-        # Si tu es en gratuit, tu as droit à 15 requêtes/min.
-        # Si on dépasse, on attend et on réessaye une fois.
-        print("⏳ Quota Gemma atteint (15 RPM), pause de 10s...")
-        time.sleep(10)
-        return call_gemma_api(prompt) # Tentative de récursion
-        
-    except exceptions.InvalidArgument:
-        return "Error: Invalid arguments (check API Key or Model Name)"
-        
-    except Exception as e:
-        return f"Gemma Error: {str(e)}"
-
-def call_embedding_model(answer):
-    """
-    Appelle gemini-embedding-1.000, limite 1000 prompts/jour
-    """
-    model_name = "models/gemini-embedding-001"
-
-    print(f"Appel du modèle : {model_name}...")
-
     try:
         result = genai.embed_content(
-            model=model_name,
-            content=answer,
-            task_type="SEMANTIC_SIMILARITY"
+            model="models/gemini-embedding-001",
+            content=text,
+            task_type="SEMANTIC_SIMILARITY",
         )
-
-        return result['embedding']
-
+        return result["embedding"]
     except exceptions.ResourceExhausted:
-        print("⏳ Quota Embedding atteint, pause de 10s...")
+        print("Embedding quota reached. Waiting 10s...")
         time.sleep(10)
-        return call_embedding_model(answer)
-
+        return call_embedding_model(text)  # Retry once
     except exceptions.InvalidArgument as e:
         return f"Error: Invalid arguments ({str(e)})"
-
     except Exception as e:
-        return f"Embedding Error: {str(e)}"
+        return f"Embedding error: {str(e)}"
 
 
-def call_qwen_local(prompt: str) -> str:
+# =============================================================================
+# Main dispatcher: call_llm
+# =============================================================================
+
+def call_llm(prompt: str, models: str = "all") -> Dict[str, str]:
     """
-    Appelle Qwen 2.5 Coder 7B local via Ollama.
-    """
-    url = "http://localhost:11434/api/generate"
+    Generic dispatcher to call one or multiple LLM models.
     
-    # Structure du payload adaptée à Ollama
-    payload = {
-        "model": "qwen2.5-coder:7b", # Assurez-vous d'avoir fait 'ollama pull qwen2.5-coder:7b'
-        "prompt": prompt,
-        "stream": False,
-        "options": {
-            "temperature": 0.0  # Déterministe
-        }
+    Args:
+        prompt: Input text prompt
+        models: Model selector
+            - "all" → calls all registered models
+            - "model_name" (str) → calls single model
+            - ["model1", "model2"] (list) → calls specified models
+    
+    Returns:
+        Dict {model_name: response_text} where response is either:
+        - Generated text (success)
+        - Error message (failure)
+    """
+    load_dotenv()
+
+    # Model registry: maps display name to callable
+    MODELS_MAPPING = {
+        "openai": call_openai_api,
+        "gemma": call_gemma_api,
+        "mistral": call_mistral_local,
+        "ministral-3b": call_ministral3b_local,
+        "ministral-8b": call_ministral8b_local,
+        "qwen2_5-7b-instruct": call_qwen2_5_local,
+        "llama3_2-3b": call_llama3_2_3b_local,
+        "qwen": call_qwen_local,
+        "glm": call_glm46_sdk,
     }
 
-    try:
-        # Utilisation de requests pour rester cohérent avec le reste du fichier
-        resp = requests.post(url, json=payload, timeout=120)
-        resp.raise_for_status()
-        data = resp.json()
-        return data.get("response", "").strip()
-    except Exception as e:
-        return f"Qwen local error: {e}"
+    # Resolve model selection
+    if models == "all":
+        selected_models = list(MODELS_MAPPING.keys())
+    elif isinstance(models, str):
+        selected_models = [models]
+    else:
+        selected_models = list(models)
+
+    results = {}
+
+    # Call each selected model
+    for model_name in selected_models:
+        if model_name in MODELS_MAPPING:
+            print(f"Calling model: {model_name}...")
+            response = MODELS_MAPPING[model_name](prompt)
+            results[model_name] = response
+        else:
+            print(f"Warning: model '{model_name}' not found in registry.")
+            results[model_name] = "Error: Model not found"
+
+    return results
