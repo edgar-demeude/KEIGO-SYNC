@@ -8,16 +8,6 @@ import metrics_calculators
 # Configuration & Setup
 # =============================================================================
 
-# List of models with temperature = 0.0 (zero-shot deterministic)
-ZERO_TEMP_MODELS = {
-    "mistral",
-    "ministral-3b",
-    "glm",
-    "gemma",
-    "qwen",
-}
-
-
 # Pandas display options for better output readability
 def configure_pandas_display():
     """Configure pandas output for wide displays."""
@@ -26,7 +16,6 @@ def configure_pandas_display():
     pd.set_option("display.max_colwidth", 50)
     pd.set_option("display.width", 2000)
     pd.set_option("display.colheader_justify", "left")
-
 
 # =============================================================================
 # Main Pipeline
@@ -45,11 +34,10 @@ def main():
     benchmark_prompts = loaders.load_all_benchmarks("../data/Benchmark_Questions.xlsx")
 
     # Select model(s) to evaluate
-    models_list = "mistral"  # Single model or list: ["mistral", "ministral-3b", "gemma", "glm", "qwen"]
+    models_list = "mistral"  # ou liste: ["mistral", "ministral-3b", "gemma", "glm", "qwen"]
 
-    # Determine iteration count based on model temperature
-    active_models = {models_list} if isinstance(models_list, str) else set(models_list)
-    nb_iter = 1 if (active_models & ZERO_TEMP_MODELS) else 3
+    # FIXED number of iterations for all models
+    nb_iter = 3
 
     # Limit number of questions for testing (-1 = all)
     nb_questions = 1
@@ -63,8 +51,8 @@ def main():
     print(benchmark_prompts.head(2))
 
     print("\n========== EXECUTION PARAMETERS ==========")
-    print(f"Models              : {models_list}")
-    print(f"Iterations          : {nb_iter}")
+    print(f"Models : {models_list}")
+    print(f"Iterations : {nb_iter}")
     print(f"Questions to process: {nb_questions}")
 
     # Phase 1: Generate LLM responses
@@ -82,23 +70,21 @@ def main():
     # Phase 2: Compute semantic embeddings
     print("\n========== EMBEDDING COMPUTATION ==========")
     responses_with_embeddings = compute_embeddings_batch(responses)
-
     print("\n---------- Embedding Sizes (Preview) ----------")
     print(responses_with_embeddings["response_embedding"].head(2).apply(len))
 
     # Phase 3: Compute quality metrics
     print("\n========== METRICS CALCULATION ==========")
     responses_with_metrics = process_metrics_batches(responses_with_embeddings)
-
     print("\n---------- Responses with Metrics (Preview) ----------")
     print(responses_with_metrics.head(2))
 
     # Phase 4: Export results
     output_path = f"../data/{models_list}_x{nb_iter}.json"
-    
+
     # Reorder columns for cleaner JSON structure
     responses_with_metrics = reorder_columns_for_json(responses_with_metrics)
-    
+
     responses_with_metrics.to_json(
         output_path,
         orient="records",

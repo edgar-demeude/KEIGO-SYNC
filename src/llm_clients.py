@@ -81,34 +81,31 @@ def call_ollama_model(
 
 def call_mistral_local(prompt: str) -> str:
     """Mistral 7B via Ollama (zero-shot, temp=0)."""
-    return call_ollama_model("mistral", prompt, temperature=0.0)
-
+    return call_ollama_model("mistral", prompt, temperature=0.5)
 
 def call_ministral3b_local(prompt: str) -> str:
     """Ministral 3B via Ollama (zero-shot, temp=0)."""
-    return call_ollama_model("ministral-3:3b", prompt, temperature=0.0)
-
+    return call_ollama_model("ministral-3:3b", prompt, temperature=0.5)
 
 def call_ministral8b_local(prompt: str) -> str:
     """Ministral 8B via Ollama (zero-shot, temp=0)."""
-    return call_ollama_model("ministral-3:8b", prompt, temperature=0.0)
-
+    return call_ollama_model("ministral-3:8b", prompt, temperature=0.5)
 
 def call_qwen_local(prompt: str) -> str:
     """Qwen 2.5 Coder 7B via Ollama (zero-shot, temp=0)."""
-    return call_ollama_model("qwen2.5-coder:7b", prompt, temperature=0.0)
+    return call_ollama_model("qwen2.5-coder:7b", prompt, temperature=0.5)
 
 def call_qwen2_5_local(prompt: str) -> str:
     """Qwen 2.5 Instruct 7B via Ollama (zero-shot, temp=0)."""
-    return call_ollama_model("qwen2.5:7b-instruct", prompt, temperature=0.0)
+    return call_ollama_model("qwen2.5:7b-instruct", prompt, temperature=0.5)
 
 def call_llama3_2_3b_local(prompt: str) -> str:
     """Llama 3.2 3B via Ollama (zero-shot, temp=0)."""
-    return call_ollama_model("llama3.2:3b", prompt, temperature=0.0)
+    return call_ollama_model("llama3.2:3b", prompt, temperature=0.5)
 
 def call_deepseek_r1_7b_local(prompt: str) -> str:
     """Deepseek R1 7B via Ollama (zero-shot, temp=0)."""
-    return call_ollama_model("deepseek-r1:7b", prompt, temperature=0.0)
+    return call_ollama_model("deepseek-r1:7b", prompt, temperature=0.5)
 
 def call_gemma_api(prompt: str) -> str:
     """
@@ -118,7 +115,7 @@ def call_gemma_api(prompt: str) -> str:
     try:
         model = genai.GenerativeModel(
             "models/gemma-3-27b-it",
-            generation_config={"temperature": 0.0},
+            generation_config={"temperature": 0.5},
         )
         response = model.generate_content(prompt)
         if response.candidates:
