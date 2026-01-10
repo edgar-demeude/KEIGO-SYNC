@@ -34,13 +34,13 @@ def main():
     benchmark_prompts = loaders.load_all_benchmarks("../data/Benchmark_Questions.xlsx")
 
     # Select model(s) to evaluate
-    models_list = "mistral"  # ou liste: ["mistral", "ministral-3b", "gemma", "glm", "qwen"]
+    models_list = "mistral"  # ou liste: ["mistral", "ministral-8b", "ministral-3b", "gemma", "glm", "qwen"]
 
     # FIXED number of iterations for all models
-    nb_iter = 3
+    nb_iter = 1
 
     # Limit number of questions for testing (-1 = all)
-    nb_questions = 1
+    nb_questions = -1
 
     # Setup display
     configure_pandas_display()
