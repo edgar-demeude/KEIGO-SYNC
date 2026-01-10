@@ -106,6 +106,10 @@ def call_llama3_2_3b_local(prompt: str) -> str:
     """Llama 3.2 3B via Ollama (zero-shot, temp=0)."""
     return call_ollama_model("llama3.2:3b", prompt, temperature=0.0)
 
+def call_deepseek_r1_7b_local(prompt: str) -> str:
+    """Deepseek R1 7B via Ollama (zero-shot, temp=0)."""
+    return call_ollama_model("deepseek-r1:7b", prompt, temperature=0.0)
+
 def call_gemma_api(prompt: str) -> str:
     """
     Gemma 3 27B (Google Generative AI API).
@@ -214,6 +218,7 @@ def call_llm(prompt: str, models: str = "all") -> Dict[str, str]:
         "ministral-8b": call_ministral8b_local,
         "qwen2_5-7b-instruct": call_qwen2_5_local,
         "llama3_2-3b": call_llama3_2_3b_local,
+        "deepseek-r1-7b": call_deepseek_r1_7b_local,
         "qwen": call_qwen_local,
         "glm": call_glm46_sdk,
     }

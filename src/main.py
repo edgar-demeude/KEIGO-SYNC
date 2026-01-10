@@ -17,6 +17,7 @@ ZERO_TEMP_MODELS = {
     "qwen",
 }
 
+
 # Pandas display options for better output readability
 def configure_pandas_display():
     """Configure pandas output for wide displays."""
@@ -83,7 +84,7 @@ def main():
     responses_with_embeddings = compute_embeddings_batch(responses)
 
     print("\n---------- Embedding Sizes (Preview) ----------")
-    print(responses_with_embeddings["reponse_emb"].head(2).apply(len))
+    print(responses_with_embeddings["response_embedding"].head(2).apply(len))
 
     # Phase 3: Compute quality metrics
     print("\n========== METRICS CALCULATION ==========")
@@ -94,6 +95,10 @@ def main():
 
     # Phase 4: Export results
     output_path = f"../data/{models_list}_x{nb_iter}.json"
+    
+    # Reorder columns for cleaner JSON structure
+    responses_with_metrics = reorder_columns_for_json(responses_with_metrics)
+    
     responses_with_metrics.to_json(
         output_path,
         orient="records",
@@ -117,19 +122,19 @@ def process_benchmark_batch(
 ) -> pd.DataFrame:
     """
     Call LLM models for each benchmark question across iterations.
-    
+
     For each iteration, call every model on each question variant,
     collecting responses with metadata (question ID, language, model name).
-    
+
     Args:
         df_input: DataFrame with prompt variants (from loaders)
         models: Single model name (str) or list of models
         nb_iter: Number of iterations (deterministic models = 1)
         nb_questions: Limit to first N questions (-1 = all)
-    
+
     Returns:
-        DataFrame with columns: ID_reponse, ID_Prompt_initial, ID_Question,
-        num_batch, Categorie, langue_variante, model, question_txt, reponse_txt
+        DataFrame with columns: response_id, initial_prompt_id, question_id,
+        num_batch, category, language_variant, model, question_text, response_text
     """
     if nb_questions > 0:
         df_input = df_input.head(nb_questions)
@@ -144,28 +149,28 @@ def process_benchmark_batch(
         print(f"\n[ITERATION {batch_id}/{nb_iter}] Starting batch")
 
         for q_idx, (_, row) in enumerate(df_input.iterrows(), start=1):
-            responses = llm_clients.call_llm(row["Prompt_Texte"], models=models)
+            responses = llm_clients.call_llm(row["prompt_text"], models=models)
 
             for model_name, text in responses.items():
-                response_id = f"{row['ID_Prompt']}_{model_name}_{batch_id}"
+                response_id = f"{row['prompt_id']}_{model_name}_{batch_id}"
 
                 print(
                     f"[iter {batch_id}/{nb_iter}] "
                     f"question {q_idx}/{total_questions} "
                     f"model={model_name} "
-                    f"ID_Prompt={row['ID_Prompt']} -> OK"
+                    f"prompt_id={row['prompt_id']} -> OK"
                 )
 
                 results.append({
-                    "ID_reponse": response_id,
-                    "ID_Prompt_initial": row["ID_Prompt"],
-                    "ID_Question": row["ID_Question"],
+                    "response_id": response_id,
+                    "initial_prompt_id": row["prompt_id"],
+                    "question_id": row["question_id"],
                     "num_batch": batch_id,
-                    "Categorie": row["Categorie"],
-                    "langue_variante": row["Langue_Variante"],
+                    "category": row["category"],
+                    "language_variant": row["language_variant"],
                     "model": model_name,
-                    "question_txt": row["Prompt_Texte"],
-                    "reponse_txt": text,
+                    "question_text": row["prompt_text"],
+                    "response_text": text,
                 })
 
     return pd.DataFrame(results)
@@ -174,17 +179,17 @@ def process_benchmark_batch(
 def compute_embeddings_batch(df_input: pd.DataFrame) -> pd.DataFrame:
     """
     Compute semantic embeddings for all responses.
-    
+
     Uses Gemini Embedding API to convert text responses to vector representations.
     Used for cosine similarity and semantic analysis.
-    
+
     Args:
-        df_input: DataFrame with response text in 'reponse_txt' column
-    
+        df_input: DataFrame with response text in 'response_text' column
+
     Returns:
-        Same DataFrame with added 'reponse_emb' column (list of floats)
+        Same DataFrame with added 'response_embedding' column (list of floats)
     """
-    df_input["reponse_emb"] = df_input["reponse_txt"].apply(
+    df_input["response_embedding"] = df_input["response_text"].apply(
         llm_clients.call_embedding_model
     )
     return df_input
@@ -193,24 +198,24 @@ def compute_embeddings_batch(df_input: pd.DataFrame) -> pd.DataFrame:
 def process_metrics_batches(df_responses: pd.DataFrame) -> pd.DataFrame:
     """
     Compute metrics for response batches.
-    
+
     Groups responses by (question, model, iteration) and computes metrics
     for each group together (enables relative comparisons across language variants).
-    
+
     Metrics computed:
     - Text properties: char count, sentence count, avg sentence length
     - Formality: language-specific politeness markers
     - Semantic: cosine similarity to English reference
     - Judgment: LLM-as-a-judge sycophancy evaluation
-    
+
     Args:
         df_responses: DataFrame with responses and embeddings
-    
+
     Returns:
         Same DataFrame with added metric columns
     """
     all_scored_groups = []
-    groups = df_responses.groupby(["ID_Question", "model", "num_batch"])
+    groups = df_responses.groupby(["question_id", "model", "num_batch"])
     print(f"Computing metrics for {len(groups)} batches...")
 
     for _, group in groups:
@@ -218,6 +223,67 @@ def process_metrics_batches(df_responses: pd.DataFrame) -> pd.DataFrame:
         all_scored_groups.append(scored_group)
 
     return pd.concat(all_scored_groups, ignore_index=True)
+
+
+def reorder_columns_for_json(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Reorder DataFrame columns for clean JSON export.
+
+    Structure:
+    - Core IDs: response_id, initial_prompt_id, question_id
+    - Metadata: num_batch, category, language_variant, model
+    - Content: question_text, response_text
+    - Metrics: All computed metrics (char_count, formality_ratio, etc.)
+    - Embeddings: response_embedding (at the very end)
+
+    Args:
+        df: DataFrame with all columns
+
+    Returns:
+        Same DataFrame with reordered columns
+    """
+    # Core columns in desired order
+    core_cols = [
+        "response_id",
+        "initial_prompt_id",
+        "question_id",
+        "num_batch",
+        "category",
+        "language_variant",
+        "model",
+        "question_text",
+        "response_text",
+    ]
+
+    # Metrics columns (numeric and analysis-related)
+    metric_cols = [
+        "char_count",
+        "num_sentences",
+        "avg_sentence_len",
+        "formality_ratio",
+        "cosine_similarity",
+        "refusal_rate",
+    ]
+
+    # Embedding column (always at the end)
+    embedding_col = ["response_embedding"]
+
+    # Get all columns that exist in the DataFrame
+    available_core = [c for c in core_cols if c in df.columns]
+    available_metrics = [c for c in metric_cols if c in df.columns]
+    available_embedding = [c for c in embedding_col if c in df.columns]
+
+    # Any other columns not explicitly listed (in case there are extras)
+    other_cols = [
+        c
+        for c in df.columns
+        if c not in available_core + available_metrics + available_embedding
+    ]
+
+    # Final column order
+    final_order = available_core + available_metrics + other_cols + available_embedding
+
+    return df[final_order]
 
 
 if __name__ == "__main__":

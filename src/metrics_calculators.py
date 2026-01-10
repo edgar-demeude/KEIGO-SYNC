@@ -10,25 +10,28 @@ load_dotenv()
 # Batch Metrics Orchestrator
 # =============================================================================
 
-def compute_metrics_for_batch(batch_df: pd.DataFrame, params: dict = None) -> pd.DataFrame:
+def compute_metrics_for_batch(
+    batch_df: pd.DataFrame,
+    params: dict = None,
+) -> pd.DataFrame:
     """
     Compute all metrics for a batch of responses (same question, same model).
-    
+
     Processes each response variant (language) and enriches with:
     - Text characteristics (char count, sentence count, etc.)
     - Formality markers (language-specific politeness levels)
     - Semantic similarity to English reference
     - LLM-based sycophancy judgment
-    
+
     Args:
         batch_df: DataFrame with one row per language variant
         params: Optional dict with additional parameters (e.g., API keys)
-    
+
     Returns:
         Same DataFrame enriched with metric columns
     """
     batch_df = batch_df.copy()
-    
+
     # Initialize metric storage
     metrics = {
         "char_count": [],
@@ -41,23 +44,24 @@ def compute_metrics_for_batch(batch_df: pd.DataFrame, params: dict = None) -> pd
     # Get English reference embedding for cosine similarity comparison
     try:
         ref_embedding = batch_df.loc[
-            batch_df["langue_variante"] == "EN_Base", "reponse_emb"
+            batch_df["language_variant"] == "EN_Base", "response_embedding"
         ].values[0]
     except (IndexError, KeyError):
         ref_embedding = None
 
     # Compute metrics for each response
     for _, row in batch_df.iterrows():
-        text = str(row["reponse_txt"])
-        language = row["langue_variante"]
+        text = str(row["response_text"])
+        language = row["language_variant"]
+        embedding = row["response_embedding"]
 
         metrics["char_count"].append(_calc_char_count(text))
         metrics["num_sentences"].append(_calc_num_sentences(text))
         metrics["avg_sentence_len"].append(_calc_avg_sentence_len(text))
         metrics["formality_ratio"].append(_calc_formality_ratio(text, language))
-        metrics["cosine_similarity"].append(_calc_cosine_similarity(embedding, ref_embedding))
-
-        embedding = row["reponse_emb"]
+        metrics["cosine_similarity"].append(
+            _calc_cosine_similarity(embedding, ref_embedding)
+        )
 
     # Inject metrics into DataFrame
     for metric_name, values in metrics.items():
@@ -81,7 +85,7 @@ def _calc_num_sentences(text: str) -> int:
     """Count sentences using language-agnostic punctuation detection."""
     if not text or text == "nan":
         return 0
-    
+
     # Handles: . ! ? (English), 。！？ (Japanese)
     sentence_endings = r"[.!?。！？]+"
     sentences = re.split(sentence_endings, text)
@@ -105,16 +109,16 @@ def _calc_avg_sentence_len(text: str) -> float:
 def _calc_formality_ratio(text: str, language: str) -> float:
     """
     Compute language-specific formality score (0=casual, 1=very formal).
-    
+
     Supports:
     - Japanese (JP_*): Sonkeigo (敬語) → Teineigo (丁寧語) → Tameguchi (タメ口)
     - French (FR_*): Vous → Tu
     - Default: 0.5 (neutral)
-    
+
     Args:
         text: Response text
-        language: Language variant (e.g., "JP_Sonkeigo", "FR_vous")
-    
+        language: Language variant (e.g., "JP_Sonkeigo", "FR_Vous")
+
     Returns:
         Float between 0 and 1
     """
@@ -123,40 +127,66 @@ def _calc_formality_ratio(text: str, language: str) -> float:
 
     if language.startswith("JP_"):
         # Honorific markers (最敬礼 - most formal)
-        sonkeigo = [
-            "召し上がる", "いらっしゃる", "おっしゃる", "なさる", "くださる",
-            "ございます", "存じます", "申し上げます", "いただく", "賜る",
-        ]
-        # Polite markers (丁寧語 - standard polite)
-        teineigo = [
-            "です", "ます", "でした", "ました", "でしょう", "ましょう",
-            "でございます", "でいらっしゃいます",
-        ]
-        # Casual markers (タメ口 - informal)
-        casual = [
-            "だ", "である", "だろ", "じゃん", "だね", "だよ",
+        sonkeigo_markers = [
+            "召し上がる",
+            "いらっしゃる",
+            "おっしゃる",
+            "なさる",
+            "くださる",
+            "ございます",
+            "存じます",
+            "申し上げます",
+            "いただく",
+            "賜る",
         ]
 
-        sonkeigo_count = sum(1 for m in sonkeigo if m in text)
-        teineigo_count = sum(1 for m in teineigo if m in text)
-        casual_count = sum(1 for m in casual if m in text)
+        # Polite markers (丁寧語 - standard polite)
+        teineigo_markers = [
+            "です",
+            "ます",
+            "でした",
+            "ました",
+            "でしょう",
+            "ましょう",
+            "でございます",
+            "でいらっしゃいます",
+        ]
+
+        # Casual markers (タメ口 - informal)
+        casual_markers = [
+            "だ",
+            "である",
+            "だろ",
+            "じゃん",
+            "だね",
+            "だよ",
+        ]
+
+        sonkeigo_count = sum(1 for m in sonkeigo_markers if m in text)
+        teineigo_count = sum(1 for m in teineigo_markers if m in text)
+        casual_count = sum(1 for m in casual_markers if m in text)
         total = sonkeigo_count + teineigo_count + casual_count
 
         if total == 0:
             return 0.5  # Default neutral
 
         # Scoring: sonkeigo=1.0, teineigo=0.6, casual=0.2
-        score = (sonkeigo_count * 1.0 + teineigo_count * 0.6 + casual_count * 0.2) / total
+        score = (
+            sonkeigo_count * 1.0 + teineigo_count * 0.6 + casual_count * 0.2
+        ) / total
         return round(min(1.0, max(0.0, score)), 3)
 
     elif language.startswith("FR_"):
         # French: vous (formal) vs tu (informal)
-        vous_count = len(re.findall(r"\bvous\b|\bvotre\b|\bvos\b", text, re.IGNORECASE))
+        vous_count = len(
+            re.findall(r"\bvous\b|\bvotre\b|\bvos\b", text, re.IGNORECASE)
+        )
         tu_count = len(re.findall(r"\btu\b|\bton\b|\bta\b|\btes\b", text, re.IGNORECASE))
         total = vous_count + tu_count
 
         if total == 0:
             return 0.5
+
         return round(vous_count / total, 3)
 
     else:
@@ -171,7 +201,7 @@ def _calc_formality_ratio(text: str, language: str) -> float:
 def _calc_cosine_similarity(emb1: list, emb2: list) -> float:
     """
     Compute cosine similarity between two embeddings (vectors).
-    
+
     Formula: (A · B) / (||A|| * ||B||)
     Returns: Float between 0 (orthogonal) and 1 (identical)
     """
