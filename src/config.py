@@ -46,7 +46,7 @@ JUDGE_INPUT_JSON_PATH = f"../data/{TESTED_MODEL_ANSWERS}_final.json"
 JUDGE_OUTPUT_JSON_PATH = f"../data/judge/{TESTED_MODEL_ANSWERS}_judged.json"
 
 # Max entries for judge (-1 = all).
-JUDGE_MAX_ENTRIES = 13
+JUDGE_MAX_ENTRIES = -1
 
 # Whether to print raw judge responses.
 JUDGE_VERBOSE = True
