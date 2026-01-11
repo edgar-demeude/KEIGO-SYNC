@@ -32,7 +32,7 @@ BENCHMARK_EXCEL_PATH = "../data/Benchmark_Questions.xlsx"
 
 # Name of the tested model answers file (without .json) used by judge.py.
 # By default, you can manually set one of the per-model base names here, e.g. "mistral_x3".
-TESTED_MODEL_ANSWERS = "gemma_x3"  # or "llama2-7b_x3", etc.
+TESTED_MODEL_ANSWERS = "qwen_x3"  # or "llama2-7b_x3", etc.
 
 # Judge models to use.
 JUDGE_MODELS = [

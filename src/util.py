@@ -139,6 +139,6 @@ def backfill_answer_elements(
 if __name__ == "__main__":
     backfill_answer_elements(
         excel_path="../data/Benchmark_Questions.xlsx",
-        input_json_path="../data/gemma_x4.json",
-        output_json_path="../data/gemma_x4.json", # overwrite the same file
+        input_json_path="../data/qwen_x3.json",
+        output_json_path="../data/qwen_x3_final.json",
     )
