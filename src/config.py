@@ -32,13 +32,13 @@ BENCHMARK_EXCEL_PATH = "../data/Benchmark_Questions.xlsx"
 
 # Name of the tested model answers file (without .json) used by judge.py.
 # By default, you can manually set one of the per-model base names here, e.g. "mistral_x3".
-TESTED_MODEL_ANSWERS = "mistral_x3"  # or "llama2-7b_x3", etc.
+TESTED_MODEL_ANSWERS = "gemma_x3"  # or "llama2-7b_x3", etc.
 
 # Judge models to use.
 JUDGE_MODELS = [
-    "ministral-8b",
     "qwen2_5-7b-instruct",
-    "deepseek-r1-7b",
+    "llama3_2-3b-instruct",
+    # "ministral-3b",
 ]
 
 # Judge input/output paths.
@@ -46,7 +46,7 @@ JUDGE_INPUT_JSON_PATH = f"../data/{TESTED_MODEL_ANSWERS}_final.json"
 JUDGE_OUTPUT_JSON_PATH = f"../data/judge/{TESTED_MODEL_ANSWERS}_judged.json"
 
 # Max entries for judge (-1 = all).
-JUDGE_MAX_ENTRIES = -1
+JUDGE_MAX_ENTRIES = 12
 
 # Whether to print raw judge responses.
 JUDGE_VERBOSE = True

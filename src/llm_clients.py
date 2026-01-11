@@ -198,7 +198,7 @@ MODELS_MAPPING: Dict[str, Callable[[str], str]] = {
     "ministral-8b": _ollama_fn("ministral-3:8b", temperature=0.5),
     "qwen2_5-7b-instruct": _ollama_fn("qwen2.5:7b-instruct", temperature=0.5),
     "qwen": _ollama_fn("qwen2.5-coder:7b", temperature=0.5),
-    "llama3_2-3b": _ollama_fn("llama3.2:3b", temperature=0.5),
+    "llama3_2-3b-instruct": _ollama_fn("llama3.2:3b-instruct-fp16", temperature=0.5),
     "llama2-7b": _ollama_fn("llama2:7b", temperature=0.5),
     "deepseek-r1-7b": _ollama_fn("deepseek-r1:7b", temperature=0.5),
 }
