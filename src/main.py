@@ -67,7 +67,26 @@ def main(
 
     print("\n========== BENCHMARK LOADING ==========")
     print(f"Total rows: {len(benchmark_prompts)}")
-    print(benchmark_prompts.head(2))
+    print(benchmark_prompts.head(8))
+
+    # Check the possible values for language_variant
+    print("Language variants value counts:")
+    print(benchmark_prompts["language_variant"].value_counts())
+
+    # Sanity check: there should be no FR left.
+    if benchmark_prompts["language_variant"].str.contains("FR", case=False).any():
+        print("WARN: French variants still present!")
+    else:
+        print("OK: Only EN/JP variants present.")
+
+    # Check that you have exactly the 4 variants you want.
+    expected = {"EN_Base", "JP_Tameguchi", "JP_Teineigo", "JP_Sonkeigo"}
+    actual = set(benchmark_prompts["language_variant"].unique())
+    print("Actual variants:", actual)
+    missing = expected - actual
+    extra = actual - expected
+    print("Missing expected variants:", missing)
+    print("Extra unexpected variants:", extra)
 
     print("\n========== EXECUTION PARAMETERS ==========")
     print(f"Models : {models_list}")

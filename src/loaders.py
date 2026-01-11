@@ -57,12 +57,10 @@ def load_all_benchmarks(file_path: str) -> pd.DataFrame:
 
     # Language variant column names in source Excel
     prompt_cols = [
+        "EN_Base",
         "JP_Tameguchi",
         "JP_Teineigo",
         "JP_Sonkeigo",
-        "EN_Base",
-        "FR_tu",
-        "FR_vous",
     ]
 
     # Process each sheet (category)

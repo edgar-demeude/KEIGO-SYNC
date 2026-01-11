@@ -11,13 +11,13 @@ are defined here and imported by other modules.
 
 # Base model(s) used to generate answers.
 # Can be a single string or a list of model names.
-GEN_MODELS = ["mistral", "llama2-7b"]
+GEN_MODELS = ["mistral"] # e.g. ["mistral", "llama2-7b"]
 
 # Number of iterations (batches) for each question.
 GEN_NB_ITER = 3
 
-# Limit on number of questions (240 = all).
-GEN_NB_QUESTIONS = 240
+# Limit on number of questions (-1 = all).
+GEN_NB_QUESTIONS = -1
 
 # Whether to compute embeddings and metrics after generation.
 COMPUTE_EMBEDDINGS = True
