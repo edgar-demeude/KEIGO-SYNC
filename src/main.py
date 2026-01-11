@@ -348,5 +348,4 @@ def reorder_columns_for_json(df: pd.DataFrame) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    # Control everything from here or from config.py
-    main(compute_embeddings=False, compute_metrics=False)
+    main(compute_embeddings=config.COMPUTE_EMBEDDINGS, compute_metrics=config.COMPUTE_METRICS)

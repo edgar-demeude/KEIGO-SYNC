@@ -14,23 +14,25 @@ are defined here and imported by other modules.
 GEN_MODELS = ["mistral", "llama2-7b"]
 
 # Number of iterations (batches) for each question.
-GEN_NB_ITER = 2
+GEN_NB_ITER = 3
 
-# Limit on number of questions (-1 = all).
-GEN_NB_QUESTIONS = 1
+# Limit on number of questions (240 = all).
+GEN_NB_QUESTIONS = 240
+
+# Whether to compute embeddings and metrics after generation.
+COMPUTE_EMBEDDINGS = True
+COMPUTE_METRICS = True
 
 # Excel benchmark file.
 BENCHMARK_EXCEL_PATH = "../data/Benchmark_Questions.xlsx"
-
-# (BASE_NAME / *_JSON_PATH are no longer used globally; everything is per-model.)
 
 # ---------------------------------------------------------------------------
 # Judge configuration
 # ---------------------------------------------------------------------------
 
 # Name of the tested model answers file (without .json) used by judge.py.
-# By default, you can manually set one of the per-model base names here, e.g. "mistral_x2".
-TESTED_MODEL_ANSWERS = "mistral_x2"  # or "llama2-7b_x2", etc.
+# By default, you can manually set one of the per-model base names here, e.g. "mistral_x3".
+TESTED_MODEL_ANSWERS = "mistral_x3"  # or "llama2-7b_x3", etc.
 
 # Judge models to use.
 JUDGE_MODELS = [
