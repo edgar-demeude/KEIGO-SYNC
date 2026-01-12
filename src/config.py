@@ -17,7 +17,7 @@ GEN_MODELS = ["mistral"] # e.g. ["mistral", "llama2-7b"]
 GEN_NB_ITER = 3
 
 # Limit on number of questions (-1 = all).
-GEN_NB_QUESTIONS = -1
+GEN_NB_QUESTIONS = 1
 
 # Whether to compute embeddings and metrics after generation.
 COMPUTE_EMBEDDINGS = True
