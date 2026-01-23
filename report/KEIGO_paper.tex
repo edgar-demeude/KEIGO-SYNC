@@ -87,42 +87,38 @@ on Factual Reliability in Japanese Large Language Models
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Introduction}
+Sycophancy in large language models (LLMs)---the tendency to agree with user-stated beliefs 
+conflicting with verifiable facts---constitutes a persistent alignment challenge. 
+While existing research examines sycophantic behavior primarily in English, the role of 
+grammatical register as a systematic factor remains insufficiently explored, particularly in 
+high-context languages where politeness is grammatically encoded.
+\\
+KEIGO-SYNC introduces a controlled evaluation framework measuring the relationship between grammatical 
+politeness and sycophantic agreement using Japanese, where honorific speech (Keigo) encodes social deference through 
+obligatory syntactic structures. Each prompt is instantiated across four register conditions: English Neutral, 
+Japanese Tameguchi (casual), Teineigo (polite), and Sonkeigo (honorific), enabling empirical assessment of 
+whether linguistic deference correlates with measurable changes in model agreement behavior.
 
-Sycophancy in large language models (LLMs) constitutes a persistent alignment challenge, characterized by a model’s tendency to agree with user-stated beliefs even when they conflict with verifiable facts. 
-Existing alignment research has primarily examined sycophantic behavior in English-language settings, often in conjunction with related phenomena such as sandbagging. 
-In parallel, multilingual safety research has largely emphasized adversarial robustness and jailbreaking prevention. 
-As a result, the role of grammatical register as a systematic factor influencing sycophantic behavior remains insufficiently explored.
-\\
-This work introduces KEIGO-SYNC, a novel evaluation framework designed to isolate and measure the relationship between grammatical politeness and sycophantic agreement. 
-The framework leverages the Japanese language, in which honorific speech (Keigo) encodes social deference through obligatory syntactic and morphological structures, enabling controlled manipulation of linguistic register without altering semantic content. 
-Unlike existing benchmarks such as MMLU or HELM, KEIGO-SYNC treats grammatical register as the sole independent variable while maintaining invariant factual premises.
-\\
-KEIGO-SYNC operationalizes sycophancy through Sycophancy Traps, defined as instances in which a model endorses demonstrably false premises. 
-Each factual prompt is systematically instantiated across four register conditions: English Neutral, Japanese Tameguchi (casual), Teineigo (polite), and Sonkeigo (honorific). 
-This design enables a controlled empirical assessment of whether increasing levels of linguistic deference are associated with measurable changes in model agreement behavior across registers.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \section{Dataset Construction}
 
-The construction of the corpus is based on a selection procedure designed to isolate the effect of grammatical politeness level on the factual integrity of responses produced by language models. 
-The objective is to assess the extent to which the level of politeness expressed by the user influences the model’s tendency to agree with factually incorrect statements. 
-To ensure diversity and comparability across evaluation scenarios, the dataset is composed of three sources. 
-First, it includes items derived from the dataset introduced in the Logical Fallacy Detection benchmark. 
-Second, it incorporates prompts adapted from the ELEPHANT dataset, which focuses on sycophantic behavior in conversational settings. 
-Third, we introduce a set of original questions specifically designed for this study. 
-All items from these sources were adapted to conform to a unified experimental format.
+The corpus comprises 60 prompts designed to isolate the effect of grammatical politeness on factual integrity. 
+To ensure diversity and comparability, the dataset integrates items from the Logical Fallacy Detection benchmark, 
+the ELEPHANT dataset, and original questions specifically developed for this study. These items are organized into 
+five thematic domains: education, health, logical fallacies, technology, and ethics, with topics restricted to 
+widely documented general knowledge to limit specialized knowledge biases.
 \\
-The dataset is structured around five thematic domains, namely education and cognition, health and well-being, logical fallacies, technology and society, and ethics and values. 
-This organization allows us to examine whether the model’s tendency to agree varies across semantic domains and levels of normative sensitivity. 
-Each domain contains prompts formulated in an assertive manner and deliberately incorporating erroneous premises, fallacious conclusions, or explicit reasoning biases. 
-The experimental protocol aims to measure the model’s ability to maintain a critical stance when confronted with a user expressing an incorrect claim with a high degree of linguistic confidence. 
-To limit biases related to missing or specialized knowledge, the selected topics correspond to widely documented general knowledge. 
-\\ 
-All prompts were originally written in English and subsequently translated and adapted by a native Japanese speaker to ensure semantic and pragmatic fidelity.
-Each item was instantiated in three Japanese language registers, namely the informal register (Tameguchi), the standard register (Teineigo), and the honorific register (Sonkeigo). 
-The politeness level constitutes the sole experimentally manipulated variable. 
-This design enables a controlled analysis of the relationship between politeness level and the rate at which the model refuses or explicitly corrects factual errors in its responses.
+All items follow a unified [Assertion] + [Question] template, formulated assertively and deliberately incorporating
+ erroneous premises or reasoning biases to measure models' ability to maintain critical stance under linguistic
+  pressure. Originally written in English, all prompts were adapted by a native Japanese speaker to ensure semantic 
+  and pragmatic fidelity. Each item was instantiated across three Japanese registers: 
+  Tameguchi (informal), Teineigo (standard), and Sonkeigo (honorific). By treating politeness level as the sole 
+  independent variable, this design enables controlled analysis of how linguistic deference influences the rate 
+  of sycophantic agreement versus factual correction.
+  
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Experimental Setup}
 
 \subsection{Model Selection and Configuration}
@@ -141,6 +137,7 @@ The experimental design further accounts for structural variability by incorpora
  To ensure statistical rigor and reproducibility, all inferences were conducted with a temperature setting of 0.5, and each prompt was subjected to N=3 independent iterations to mitigate the impact of stochastic variance.
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \subsection{LLM-as-Judge Framework}
 
 Factual correctness and sycophantic behavior are evaluated using an LLM-as-judge framework with dedicated bilingual English–Japanese judging models.
@@ -153,6 +150,7 @@ Each evaluation instance provides the judge with an English factual reference an
 
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \subsection{Evaluation Metrics}
 
 \subsubsection{LLM-as-Judge}
@@ -169,7 +167,9 @@ Judges are guided to distinguish between responses that accurately correct or ch
 Brief politeness or minor empathetic language is explicitly excluded from high sycophancy ratings, whereas repeated validation, excessive agreement, or uncritical adoption of misleading premises is penalized. 
 Each judgment is reported in a standardized JSON format, including the three dimension scores, the overall sycophancy score, and a concise textual rationale of two to four sentences. 
 This structured prompt ensures that evaluations are reproducible, interpretable, and aligned with a clearly defined operationalization of sycophancy.
+        
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \subsubsection{Quantitative Metrics}
 To quantify the trade-off between social deference and factual accuracy, the system employs a custom metric engine that computes two primary independent variables. 
 The first, the Formality Ratio, measures the degree of politeness in the model’s response. 
@@ -206,15 +206,13 @@ The empirical evaluation reveals a consistent but nuanced relationship between g
 
 \begin{table}[H]
     \centering
-    \small % This makes the whole table slightly smaller to fit the column
+    \small 
     \caption{Average sycophancy scores by judge and language variant}
     \label{tab:sycophancy_scores}
-    % 'X' columns will automatically wrap text and distribute width evenly
     \begin{tabularx}{\columnwidth}{lXXXX}
         \toprule
         & \multicolumn{4}{c}{Judge model} \\
         \cmidrule(lr){2-5}
-        % Using \scriptsize (approx 0.8 size) for the long headers
         \scriptsize Language variant & \scriptsize Human & \scriptsize Gemma \mbox{3-27B} & \scriptsize Llama 3.2-3B Instruct & \scriptsize Qwen 2.5-7B Instruct \\
         \midrule
             EN\_Base & 0.62 & 1.39 & 1.87 & 1.41 \\
@@ -259,8 +257,46 @@ This concordance validates the robustness of the language-level effect while hig
 
 \section{Conclusion}
 
-[TODO]
+This study introduces KEIGO-SYNC, a controlled evaluation framework for measuring the relationship between grammatical politeness and sycophantic behavior in multilingual large language models. 
+By isolating honorific register as an independent variable while maintaining semantic invariance, we provide empirical evidence for a language-level sycophancy gap that substantially exceeds intra-register variation within Japanese.
 
+\subsection{Principal Findings}
+Our results demonstrate two primary phenomena. 
+First, a consistent cross-linguistic effect emerges whereby Japanese prompts elicit systematically higher sycophancy scores than semantically equivalent English prompts, with language transition effects ($\Delta_{\text{EN}\rightarrow\text{JP}}$) approximately 2--3 times larger than maximum intra-Japanese register differences. 
+Second, while Sonkeigo (honorific) register exhibited the highest sycophancy scores in three of four judge conditions, the gradation across Japanese registers (Tameguchi, Teineigo, Sonkeigo) displayed non-monotonic patterns suggesting complex interactions between grammatical formality, cultural priors embedded in training data, and model-specific alignment objectives.
+
+\subsection{Limitations and Methodological Constraints}
+
+Several methodological limitations constrain the generalizability of these findings and warrant explicit acknowledgment.
+
+
+\textbf{Model Constraints.} The LLM-as-judge evaluation relied on models of limited capacity (Gemma 3-27B, Llama 3.2-3B, Qwen 2.5-7B) due to budgetary and computational constraints.
+ Ideally, frontier models such as GPT-4 or GPT-5 would serve as judges to maximize linguistic sophistication and cross-cultural reasoning capability.
+ The use of smaller open-source models, while enabling reproducibility, may have introduced evaluation noise or failed to capture subtle semantic nuances in Japanese honorific constructions.
+
+
+\textbf{Dataset Scale.} The evaluation corpus comprised only 60 prompts, falling substantially short of the initially projected target of 200+ items.
+ This limited sample size constrains statistical power for detecting interaction effects between register, semantic domain, and model architecture.
+ Fine-grained analyses of domain-specific or fallacy-type-specific sycophancy patterns remain underpowered, and confidence intervals around effect size estimates are correspondingly wide.
+
+
+\textbf{Prompt Design Uniformity.} All experimental items followed a rigid [Assertion] + [Question] template structure.
+ This uniformity, while controlling for structural confounds, limits ecological validity.
+ Real-world sycophancy traps exhibit substantial variation in rhetorical framing, interrogative vs. declarative phrasing, and implicit vs. explicit false premises.
+ The absence of paraphrastic variation and alternative formulation strategies may have artificially stabilized model responses, potentially underestimating the true variance in sycophantic behavior across naturalistic interaction contexts.
+
+
+\textbf{Translation Quality Assurance.} While all Japanese translations were produced by a native speaker, the absence of formal linguistic expertise in Japanese honorific pragmatics introduces potential validity threats.
+ Subtle errors in Keigo application, inappropriate register mixing, or unnatural formality gradations may have inadvertently confounded the manipulation.
+ Ideally, translations would undergo expert review by a specialist in Japanese sociolinguistics or undergo inter-rater reliability assessment by multiple native speakers with metalinguistic training.
+
+
+\subsection{Future Directions}
+
+Despite these limitations, KEIGO-SYNC establishes a replicable methodology for isolating grammatical register effects in safety-critical model behaviors.
+ Future work should expand the dataset to include additional high-context languages (e.g., Korean, Thai, Javanese), increase sample sizes to enable robust statistical inference, diversify prompt structures to capture naturalistic variation, and employ frontier judge models or specialized bilingual annotators.
+ Additionally, controlled ablation studies examining the interaction between RLHF intensity and honorific-induced sycophancy could clarify whether this phenomenon is intrinsic to alignment procedures or correctable through modified training objectives.
+ Ultimately, addressing the politeness-truthfulness trade-off represents a necessary condition for the safe deployment of culturally-aware language models in global settings.
 
 \section{Citations and references}
 
