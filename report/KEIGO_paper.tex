@@ -82,8 +82,6 @@ on Factual Reliability in Japanese Large Language Models
 \end{frontmatter}
 %%% Use this environment to include an abstract of your paper.
 
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Introduction}
@@ -104,7 +102,7 @@ whether linguistic deference correlates with measurable changes in model agreeme
 \section{Dataset Construction}
 
 The corpus comprises 60 prompts designed to isolate the effect of grammatical politeness on factual integrity. 
-To ensure diversity and comparability, the dataset integrates items from the Logical Fallacy Detection benchmark, 
+To ensure diversity and comparability, the dataset integrates items from the Logical Fallacy Detection\cite{jin2022logicalfallacydetection} benchmark, 
 the ELEPHANT dataset, and original questions specifically developed for this study. These items are organized into 
 five thematic domains: education, health, logical fallacies, technology, and ethics, with topics restricted to 
 widely documented general knowledge to limit specialized knowledge biases.
@@ -155,7 +153,7 @@ Each evaluation instance provides the judge with an English factual reference an
 
 \subsubsection{LLM-as-Judge}
 Sycophancy is assessed using a structured evaluation prompt that instructs the judge to quantify the extent to which a model response prioritizes agreement, flattery, or face-preserving behavior over objective and factually accurate content. 
-The prompt operationalizes sycophancy along three dimensions derived from the ELEPHANT framework: regressive sycophancy, validation sycophancy, and framing sycophancy.
+The prompt operationalizes sycophancy along three dimensions derived from the ELEPHANT framework\cite{cheng2025elephant} : regressive sycophancy, validation sycophancy, and framing sycophancy.
  Regressive sycophancy captures the degree to which the model sacrifices factual accuracy or independent reasoning to conform to the user’s incorrect beliefs. 
  Validation sycophancy measures the extent to which the response emphasizes emotional reassurance or praise over objective guidance. 
  Framing sycophancy evaluates whether the model uncritically accepts the user’s assumptions or framing rather than examining or correcting them when necessary. 
@@ -187,15 +185,51 @@ This approach enables a precise, quantitative assessment of how increasing level
 
 \section{Evaluation Protocol}
 
-\subsection{Human Evaluation}
+\subsection{Human Evaluation of LLMs as a Judge}
 
-[TODO]
+To validate the efficacy of the LLM-as-a-judge framework, the automated metrics were benchmarked against human judgment using a representative subsample of the dataset ($n=72$~responses, derived from 18 of the 60 primary questions across four distinct models). 
+This subset accounts for 7.5\% of the total response corpus analyzed in this study. 
+To mitigate potential systemic bias, the human evaluation was conducted by native Japanese speakers external to the research project, ensuring an objective baseline.
+\\
+The protocol prioritizes the alignment of evaluative trends over absolute score magnitude. 
+Specifically, the framework assesses the inter-rater reliability between human judges and individual LLM judges through two statistical lenses: Spearman’s rank correlation coefficient, to evaluate the consistency of model rankings by quality, and Pearson’s correlation coefficient, to quantify the linear relationship and magnitude alignment between the scores.
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Statistical Analysis and Robustness Checks}
 
-[TODO]
+The following table presents the statistical alignment between human evaluators and the three LLM judges regarding the \textit{framing} metric.
+\begin{table}[H]
+    \centering
+    \small 
+    \caption{Inter-rater Reliability: Spearman and Pearson Correlations for Framing}
+    \label{tab:framing_correlation}
+    \begin{tabularx}{\columnwidth}{l @{\extracolsep{\fill}} ccc}
+        \toprule
+        & \multicolumn{3}{c}{Judge model} \\
+        \cmidrule(lr){2-4}
+        Metric & \scriptsize Gemma 3-27B & \scriptsize Llama 3.2-3B & \scriptsize Qwen 2.5-7B \\
+        \midrule
+        \textbf{Pearson Linear ($r$)} & & & \\
+        \quad Coeff. & \textbf{0.4539} & 0.3413 & 0.1790 \\
+        \quad $p$-value & (0.0006) & (0.0115) & (0.1952) \\
+        \addlinespace
+        \textbf{Spearman Rank ($\rho$)} & & & \\
+        \quad Coeff. & \textbf{0.4075} & 0.2986 & 0.1650 \\
+        \quad $p$-value & (0.0022) & (0.0283) & (0.2332) \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+The empirical data indicates a lack of statistically significant correlation for the \textbf{Qwen 2.5-7B Instruct} model ($p > 0.19$ for both coefficients). 
+Consequently, this model was excluded from subsequent analysis as its evaluative output does not reliably reflect human judgment. In contrast, both \textbf{Gemma 3-27B} and \textbf{Llama 3.2-3B Instruct} demonstrate a positive correlation with human ground truth.
+While the correlation coefficients remain moderate ($r \approx 0.30\text{--}0.45$), the remarkably low $p$-values ($p < 0.05$) confirm that these associations are statistically robust and not the result of stochastic variation.
+\\
+The degree of alignment with human evaluators also appears to scale positively with model parameters and general reasoning capabilities.
+\\
+Furthermore, a significant divergence in absolute score magnitude was observed. Human evaluators assigned a mean sycophancy score of 0.80, whereas \textbf{Gemma 3-27B} yielded a mean of 2.09. 
+This discrepancy suggests a fundamental difference in evaluative calibration: while the trends remain correlated, LLMs exhibit a higher sensitivity to sycophantic markers, resulting in more ``stringent'' or ``harsh'' grading behaviors compared to human subjects.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -219,6 +253,25 @@ The empirical evaluation reveals a consistent but nuanced relationship between g
             JP\_Tameguchi & 0.88 & 1.82 & 2.11 & \textbf{2.20} \\
             JP\_Teineigo & 0.79 & 1.79 & 2.23 & 2.08 \\
             JP\_Sonkeigo & \textbf{0.90} & \textbf{1.98} & \textbf{2.28} & 2.12 \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \small 
+    \caption{Average sycophancy scores and semantic similarity by language variant}
+    \label{tab:sycophancy_scores_extended}
+    \begin{tabularx}{\columnwidth}{lXXXXX}
+        \toprule
+        & \multicolumn{4}{c}{Judge model (Sycophancy)} & \\
+        \cmidrule(lr){2-5}
+        \scriptsize Language variant & \scriptsize Human & \scriptsize Gemma \mbox{3-27B} & \scriptsize Llama 3.2-3B & \scriptsize Qwen 2.5-7B & \scriptsize Cos. Sim. \\
+        \midrule
+            EN\_Base      & 0.62 & 1.39 & 1.87 & 1.41          & 1.0-ref \\
+            JP\_Tameguchi & 0.88 & 1.82 & 2.11 & \textbf{2.20} & 0.888 \\
+            JP\_Teineigo  & 0.79 & 1.79 & 2.23 & 2.08          & 0.886 \\
+            JP\_Sonkeigo  & \textbf{0.90} & \textbf{1.98} & \textbf{2.28} & 2.12 & \textbf{0.892} \\
         \bottomrule
     \end{tabularx}
 \end{table}
@@ -306,7 +359,7 @@ Despite these limitations, KEIGO-SYNC establishes a replicable methodology for i
 
 %%% Use this command to include your bibliography file.
 
-\bibliography{mybibfile}
+\bibliography{references}
 
 \end{document}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
