@@ -138,11 +138,9 @@ The experimental design further accounts for structural variability by incorpora
 
 \subsection{LLM-as-Judge Framework}
 
-Factual correctness and sycophantic behavior are evaluated using an LLM-as-judge framework with dedicated bilingual English–Japanese judging models.
- The primary judge is Google’s Gemma 3 (27B), complemented by Meta’s Llama 3.2 3B-Instruct for robustness checks.
- Both judges are fully isolated from the answer-generation models and have no access to the trap construction process, prompt variants, or model identities, ensuring evaluations rely solely on the observable content of the responses.
+Factual correctness and sycophantic behavior are evaluated using an LLM-as-judge framework with dedicated bilingual English–Japanese judging models. The primary evaluation is conducted using Qwen 2.5-7B Instruct and Meta’s Llama 3.2 3B-Instruct. To ensure validity and alignment, these judgments are complemented by Google’s Gemma 3 (27B) on a 15\% subsample and human verification on a 7.5\% subsample. All judges are fully isolated from the answer-generation models and have no access to the trap construction process, prompt variants, or model identities, ensuring evaluations rely solely on the observable content of the responses.
 \\
-Each evaluation instance provides the judge with an English factual reference answer, the Japanese model response, and structured scoring instructions.
+Each evaluation instance provides the judge with an English factual reference answer, the model response, and structured scoring instructions.
  The English reference anchors the evaluation to a consistent factual baseline and reduces cross-lingual ambiguity. 
  Judges assess semantic content and factual alignment, ignoring surface-level stylistic or politeness differences unless they interfere with factual accuracy.
 
@@ -153,18 +151,18 @@ Each evaluation instance provides the judge with an English factual reference an
 
 \subsubsection{LLM-as-Judge}
 Sycophancy is assessed using a structured evaluation prompt that instructs the judge to quantify the extent to which a model response prioritizes agreement, flattery, or face-preserving behavior over objective and factually accurate content. 
-The prompt operationalizes sycophancy along three dimensions derived from the ELEPHANT framework\cite{cheng2025elephant} : regressive sycophancy, validation sycophancy, and framing sycophancy.
- Regressive sycophancy captures the degree to which the model sacrifices factual accuracy or independent reasoning to conform to the user’s incorrect beliefs. 
- Validation sycophancy measures the extent to which the response emphasizes emotional reassurance or praise over objective guidance. 
- Framing sycophancy evaluates whether the model uncritically accepts the user’s assumptions or framing rather than examining or correcting them when necessary. 
- Each dimension is scored on a five-point scale, with higher values corresponding to greater prioritization of user appeasement over truthfulness. 
- The prompt also requires judges to provide an overall sycophancy score, reflecting the response’s general tendency to favor agreement or face-saving over factual accuracy.
+The prompt operationalizes sycophancy along three dimensions derived from the ELEPHANT framework\cite{cheng2025elephant}: regressive sycophancy, validation sycophancy, and framing sycophancy.
+\textbf{Regressive sycophancy} captures the degree to which the model sacrifices factual accuracy or independent reasoning to conform to the user’s incorrect beliefs. 
+\textbf{Validation sycophancy} measures the extent to which the response emphasizes emotional reassurance or praise over objective guidance. 
+\textbf{Framing sycophancy} evaluates whether the model uncritically accepts the user’s assumptions or framing rather than examining or correcting them when necessary. 
+Each dimension is scored on a five-point scale, with higher values corresponding to greater prioritization of user appeasement over truthfulness. 
+While the prompt asks judges to provide a holistic overall rating, the final sycophancy score used in our analysis is calculated as the arithmetic mean of these three dimensional scores, ensuring a balanced representation of the behavior.
 \\
 The prompt includes explicit instructions to compare the model response against a provided English reference answer, treated as the factual ground truth. 
 Judges are guided to distinguish between responses that accurately correct or challenge misleading statements, partially align with the ground truth, or fully adopt erroneous premises. 
 Brief politeness or minor empathetic language is explicitly excluded from high sycophancy ratings, whereas repeated validation, excessive agreement, or uncritical adoption of misleading premises is penalized. 
-Each judgment is reported in a standardized JSON format, including the three dimension scores, the overall sycophancy score, and a concise textual rationale of two to four sentences. 
-This structured prompt ensures that evaluations are reproducible, interpretable, and aligned with a clearly defined operationalization of sycophancy.
+To ensure data consistency and valid formatting, we employ a separate instance of Qwen Instruct to parse the raw output from the judges. This parsing step extracts the three dimension scores, the computed average, and the concise textual rationale (two to four sentences) into a clean, standardized JSON format.
+This structured workflow ensures that evaluations are reproducible, interpretable, and aligned with a clearly defined operationalization of sycophancy.
         
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -236,52 +234,32 @@ This discrepancy suggests a fundamental difference in evaluative calibration: wh
 
 \section{Results}
 
-The empirical evaluation reveals a consistent but nuanced relationship between grammatical politeness and sycophantic behavior across all evaluated judges. Table 1 presents average sycophancy scores across four language variants, assessed by human evaluators and three LLM-based judges.
+The empirical evaluation reveals a consistent but nuanced relationship between grammatical politeness and sycophantic behavior across all evaluated judges. Table 1 presents average sycophancy scores across four language variants, assessed by human evaluators and two LLM-based judges.
 
 \begin{table}[H]
     \centering
     \small 
     \caption{Average sycophancy scores by judge and language variant}
     \label{tab:sycophancy_scores}
-    \begin{tabularx}{\columnwidth}{lXXXX}
+    \begin{tabularx}{\columnwidth}{lXXX}
         \toprule
-        & \multicolumn{4}{c}{Judge model} \\
-        \cmidrule(lr){2-5}
-        \scriptsize Language variant & \scriptsize Human & \scriptsize Gemma \mbox{3-27B} & \scriptsize Llama 3.2-3B Instruct & \scriptsize Qwen 2.5-7B Instruct \\
+        & \multicolumn{3}{c}{Judge model} \\
+        \cmidrule(lr){2-4}
+        \scriptsize Language variant & \scriptsize Human & \scriptsize Gemma \mbox{3-27B} & \scriptsize Llama 3.2-3B Instruct \\
         \midrule
-            EN\_Base & 0.62 & 1.39 & 1.87 & 1.41 \\
-            JP\_Tameguchi & 0.88 & 1.82 & 2.11 & \textbf{2.20} \\
-            JP\_Teineigo & 0.79 & 1.79 & 2.23 & 2.08 \\
-            JP\_Sonkeigo & \textbf{0.90} & \textbf{1.98} & \textbf{2.28} & 2.12 \\
+            EN\_Base & 0.62 & 1.39 & 1.87 \\
+            JP\_Tameguchi & 0.88 & 1.82 & 2.11 \\
+            JP\_Teineigo & 0.79 & 1.79 & 2.23 \\
+            JP\_Sonkeigo & \textbf{0.90} & \textbf{1.98} & \textbf{2.28} \\
         \bottomrule
     \end{tabularx}
 \end{table}
-
-\begin{table}[H]
-    \centering
-    \small 
-    \caption{Average sycophancy scores and semantic similarity by language variant}
-    \label{tab:sycophancy_scores_extended}
-    \begin{tabularx}{\columnwidth}{lXXXXX}
-        \toprule
-        & \multicolumn{4}{c}{Judge model (Sycophancy)} & \\
-        \cmidrule(lr){2-5}
-        \scriptsize Language variant & \scriptsize Human & \scriptsize Gemma \mbox{3-27B} & \scriptsize Llama 3.2-3B & \scriptsize Qwen 2.5-7B & \scriptsize Cos. Sim. \\
-        \midrule
-            EN\_Base      & 0.62 & 1.39 & 1.87 & 1.41          & 1.0-ref \\
-            JP\_Tameguchi & 0.88 & 1.82 & 2.11 & \textbf{2.20} & 0.888 \\
-            JP\_Teineigo  & 0.79 & 1.79 & 2.23 & 2.08          & 0.886 \\
-            JP\_Sonkeigo  & \textbf{0.90} & \textbf{1.98} & \textbf{2.28} & 2.12 & \textbf{0.892} \\
-        \bottomrule
-    \end{tabularx}
-\end{table}
-
 
 \subsection{Cross-Register Sycophancy Patterns}
 
 Across all judge models, Sonkeigo (honorific register) consistently exhibited the highest mean sycophancy scores in three of four evaluation conditions. 
 Specifically, Gemma 3-27B recorded a 42.4\% increase from English baseline (1.39) to Sonkeigo (1.98), while Llama 3.2-3B Instruct showed a 21.9\% increase (1.87 to 2.28). 
-Human evaluators demonstrated a 45.2\% increase (0.62 to 0.90), and Qwen 2.5-7B Instruct exhibited a 50.4\% increase (1.41 to 2.12). 
+Human evaluators demonstrated a 45.2\% increase (0.62 to 0.90).
 These findings provide preliminary support for the hypothesized politeness-truthfulness trade-off, with higher grammatical deference correlating with increased sycophantic agreement.
 
 \subsection{Language-Level Effects Dominate Register-Level Variation}
