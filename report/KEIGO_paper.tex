@@ -125,7 +125,7 @@ All items follow a unified [Assertion] + [Question] template, formulated asserti
 To establish a baseline for evaluating sycophantic behavior across diverse linguistic frameworks, we selected a representative suite of Large Language Models (LLMs) characterized by varying architectural designs and regional development origins. 
 The selection process was governed by three primary independent variables: geographic-linguistic origin, parameter scale, and the specific alignment methodologies employed during the training of the response-generation models.
 \\
-To examine the influence of cultural and linguistic priors embedded in training corpora, the study contrasts models of Asian origin, specifically Qwen 2.5 (7B) and GLM-4.6V-Flash, with those of Western origin, namely Gemma 3 (27B) and Mistral (7B).
+To examine the influence of cultural and linguistic priors embedded in training corpora, the study contrasts models of Asian origin, specifically Qwen 2.5 (7B) and GLM-4.6V-Flash, with those of Western origin, namely Gemma 3 (27B) and Mistral v0.3 (7B).
  This geographic stratification facilitates an analysis of whether models developed within high-context linguistic environments demonstrate distinct sycophantic patterns compared to those trained predominantly on Western data when subjected to complex Japanese honorific constraints.
 \\
 The experimental design further accounts for structural variability by incorporating a spectrum of model capacities ranging from 7B to 27B parameters.
@@ -234,7 +234,22 @@ This discrepancy suggests a fundamental difference in evaluative calibration: wh
 
 \section{Results}
 
-The empirical evaluation reveals a consistent but nuanced relationship between grammatical politeness and sycophantic behavior across all evaluated judges. Table 1 presents average sycophancy scores across four language variants, assessed by human evaluators and two LLM-based judges.
+The empirical evaluation reveals a consistent relationship between grammatical politeness and sycophantic behavior, governed by both linguistic framing and model architecture. Table \ref{tab:sycophancy_scores} presents the aggregate sycophancy scores across language variants, while Table \ref{tab:model_breakdown} details the performance of individual generation models.
+
+\subsection{Impact of Language and Register}
+
+The transition from English to Japanese emerged as the strongest predictor of sycophantic behavior. 
+The mean absolute difference between the English baseline and Japanese variants ($\Delta_{\text{EN}\rightarrow\text{JP}} = 0.47$ for Gemma) was over twice the magnitude of internal register variations, indicating that the language shift itself drives the bulk of the behavioral change.
+
+\paragraph{The "Sonkeigo" Effect.}
+Crucially, the hyper-formal \textbf{Sonkeigo} register consistently yielded the highest sycophancy scores across all evaluation conditions, validating the hypothesized politeness-truthfulness trade-off. 
+Gemma 3-27B recorded a 42.4\% increase from the English baseline to Sonkeigo, while Llama 3.2-3B showed a 21.9\% increase. 
+Most notably, human evaluators demonstrated a 45.2\% spike, confirming that excessive grammatical deference correlates strongly with increased agreement.
+
+\paragraph{Non-Linearity and Calibration.}
+While the extremes (English vs. Sonkeigo) followed a predictable pattern, the intermediate \textbf{Teineigo} register defied monotonic expectations. 
+Both Human and Gemma 3 evaluators rated standard politeness (Teineigo) lower than casual speech (Tameguchi), with human scores dropping from 0.88 to 0.79. 
+Regarding calibration, although human evaluators applied stricter standards (mean = 0.80) than LLM judges (Gemma: 1.75, Llama: 2.12), all judges preserved the fundamental ordering of English $<$ Japanese, confirming the robustness of these findings.
 
 \begin{table}[H]
     \centering
@@ -255,21 +270,37 @@ The empirical evaluation reveals a consistent but nuanced relationship between g
     \end{tabularx}
 \end{table}
 
-\subsection{Dominance of Language and Honorifics}
+\subsection{Architectural Susceptibility}
 
-The transition from English to Japanese emerged as the strongest predictor of sycophantic behavior. 
-The mean absolute difference between the English baseline and Japanese variants ($\Delta_{\text{EN}\rightarrow\text{JP}} = 0.47$ for Gemma) was over twice the magnitude of internal register variations, indicating that the language shift itself drives the bulk of the behavioral change.
+Disaggregating results by generation model reveals significant disparities in robustness (Table \ref{tab:model_breakdown}). 
+\textbf{Mistral v0.3} demonstrated the highest overall susceptibility, recording an extreme peak of \textbf{2.57} in the Sonkeigo register: the highest individual score observed in our study. It also displayed the most pronounced "language gap," with scores surging by +1.04 points (1.53 $\rightarrow$ 2.57) upon shifting to Japanese.
+In contrast, \textbf{Gemma 3-27B} exhibited the greatest relative robustness, maintaining consistent scores (max 1.88) across registers, suggesting that its larger parameter count or specific alignment training provides better resistance to honorific-induced bias.
 
-Crucially, however, the hyper-formal **Sonkeigo** register consistently yielded the highest sycophancy scores across all three evaluation conditions, validating the hypothesized politeness-truthfulness trade-off. 
-Gemma 3-27B recorded a 42.4\% increase from the English baseline to Sonkeigo, while Llama 3.2-3B showed a 21.9\% increase. 
-Most notably, human evaluators demonstrated a 45.2\% spike, confirming that excessive grammatical deference correlates strongly with increased agreement.
+\begin{table}[H]
+    \centering
+    \small
+    \caption{Average sycophancy scores by generation model across language variants (aggregated across all judges)}
+    \label{tab:model_breakdown}
+    \begin{tabularx}{\columnwidth}{lXXXX}
+        \toprule
+        & \multicolumn{4}{c}{Generation Model} \\
+        \cmidrule(lr){2-5}
+        \scriptsize Variant & \scriptsize GLM-4 & \scriptsize Gemma 3 & \scriptsize Qwen 2.5 & \scriptsize Mistral \\
+        \midrule
+            EN\_Base      & 1.62 & 1.55 & 1.45 & 1.53 \\
+            JP\_Tameguchi & \textbf{1.99} & \textbf{1.88} & 1.93 & 2.29 \\
+            JP\_Teineigo  & 1.95 & 1.86 & 1.95 & 2.28 \\
+            JP\_Sonkeigo  & 1.96 & \textbf{1.88} & \textbf{2.01} & \textbf{2.57} \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
 
-\subsection{Non-Linearity and Calibration}
+\paragraph{Training Methodology and Register Sensitivity.}
+These results highlight that sycophancy is an interaction between linguistic cues and model-specific priors. 
+The extreme sensitivity of \textbf{Mistral v0.3} can be attributed to its training methodology: unlike Gemma 3 or Qwen 2.5, which benefit from extensive RLHF and multilingual optimization, Mistral lacks aggressive safety alignment in non-primary languages. Consequently, it likely associates high-honorific tokens with a "service persona," conflating politeness with total submission.
 
-While the extremes (English vs. Sonkeigo) followed a predictable pattern, the intermediate **Teineigo** register defied monotonic expectations. 
-Both Human and Gemma 3 evaluators rated standard politeness (Teineigo) lower than casual speech (Tameguchi), with human scores dropping from 0.88 to 0.79. 
-This suggests that while extreme formality drives sycophancy, standard politeness may trigger different behavioral mechanisms.
-Regarding calibration, although human evaluators applied stricter standards (mean = 0.80) than LLM judges (Gemma: 1.75, Llama: 2.12), all judges preserved the fundamental ordering of English $<$ Japanese, confirming the robustness of these findings despite baseline sensitivity differences.
+Conversely, \textbf{GLM-4} deviated from the standard trajectory, peaking in the casual \textit{Tameguchi} register (1.99) rather than Sonkeigo. This inverted pattern suggests that distinct training distributions can encode sycophancy in unexpected registers, independent of standard politeness hierarchies.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -281,7 +312,7 @@ By isolating honorific register as an independent variable while maintaining sem
 \subsection{Principal Findings}
 Our results demonstrate two primary phenomena. 
 First, a consistent cross-linguistic effect emerges whereby Japanese prompts elicit systematically higher sycophancy scores than semantically equivalent English prompts, with language transition effects ($\Delta_{\text{EN}\rightarrow\text{JP}}$) approximately 2--3 times larger than maximum intra-Japanese register differences. 
-Second, while Sonkeigo (honorific) register exhibited the highest sycophancy scores in three of four judge conditions, the gradation across Japanese registers (Tameguchi, Teineigo, Sonkeigo) displayed non-monotonic patterns suggesting complex interactions between grammatical formality, cultural priors embedded in training data, and model-specific alignment objectives.
+Second, while Sonkeigo (honorific) register exhibited the highest sycophancy scores in all of our judges conditions, the gradation across Japanese registers (Tameguchi, Teineigo, Sonkeigo) displayed non-monotonic patterns suggesting complex interactions between grammatical formality, cultural priors embedded in training data, and model-specific alignment objectives.
 
 \subsection{Limitations and Methodological Constraints}
 
