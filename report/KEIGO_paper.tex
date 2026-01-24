@@ -255,36 +255,21 @@ The empirical evaluation reveals a consistent but nuanced relationship between g
     \end{tabularx}
 \end{table}
 
-\subsection{Cross-Register Sycophancy Patterns}
+\subsection{Dominance of Language and Honorifics}
 
-Across all judge models, Sonkeigo (honorific register) consistently exhibited the highest mean sycophancy scores in three of three evaluation conditions. 
-Specifically, Gemma 3-27B recorded a 42.4\% increase from English baseline (1.39) to Sonkeigo (1.98), while Llama 3.2-3B Instruct showed a 21.9\% increase (1.87 to 2.28). 
-Human evaluators demonstrated a 45.2\% increase (0.62 to 0.90).
-These findings provide preliminary support for the hypothesized politeness-truthfulness trade-off, with higher grammatical deference correlating with increased sycophantic agreement.
+The transition from English to Japanese emerged as the strongest predictor of sycophantic behavior. 
+The mean absolute difference between the English baseline and Japanese variants ($\Delta_{\text{EN}\rightarrow\text{JP}} = 0.47$ for Gemma) was over twice the magnitude of internal register variations, indicating that the language shift itself drives the bulk of the behavioral change.
 
-\subsection{Language-Level Effects Dominate Register-Level Variation}
+Crucially, however, the hyper-formal **Sonkeigo** register consistently yielded the highest sycophancy scores across all three evaluation conditions, validating the hypothesized politeness-truthfulness trade-off. 
+Gemma 3-27B recorded a 42.4\% increase from the English baseline to Sonkeigo, while Llama 3.2-3B showed a 21.9\% increase. 
+Most notably, human evaluators demonstrated a 45.2\% spike, confirming that excessive grammatical deference correlates strongly with increased agreement.
 
-While Sonkeigo demonstrated the highest sycophancy scores within the Japanese register spectrum, a more pronounced discontinuity emerged at the language boundary itself. 
-The mean absolute difference between English baseline and Japanese variants (averaged across Tameguchi, Teineigo, and Sonkeigo) substantially exceeded intra-Japanese variation. 
-For Gemma 3-27B, the English-to-Japanese gap ($\Delta_{\text{EN}\rightarrow\text{JP}} = 0.47$) was 2.35 times larger than the maximum intra-Japanese difference ($\Delta_{\text{Tameguchi}\rightarrow\text{Sonkeigo}} = 0.20$). 
-Human evaluators exhibited an even more striking pattern, with $\Delta_{\text{EN}\rightarrow\text{JP}} = 0.24$ representing 3.0 times the intra-Japanese range (0.08). 
-This suggests that the transition from English to Japanese itself constitutes a stronger predictor of sycophantic behavior than fine-grained honorific gradations within Japanese.
+\subsection{Non-Linearity and Calibration}
 
-\subsection{Inter-Register Variability Within Japanese}
-
-Contrary to initial predictions of a monotonic escalation with politeness level, the intermediate Teineigo register did not consistently occupy a median position between Tameguchi and Sonkeigo. 
-While the Llama 3.2-3B judge observed a linear progression (rising from 2.11 for Tameguchi to 2.23 for Teineigo and 2.28 for Sonkeigo), both Human and Gemma 3 evaluations revealed a non-linear pattern where the standard polite register (Teineigo) elicited lower sycophancy than the casual register (Tameguchi).
-Specifically, Gemma 3 rated Teineigo (1.79) slightly below Tameguchi (1.82), a trend that was even more pronounced in human evaluations, where Teineigo (0.79) dropped notably below Tameguchi (0.88). 
-Despite these variations in the lower registers, the hyper-formal Sonkeigo register consistently yielded the highest sycophancy scores across all judges (reaching 1.98 with Gemma and 2.28 with Llama), suggesting that extreme formality is a stronger predictor of sycophantic behavior than the distinction between casual and standard politeness.
-
-\subsection{Judge Concordance and Baseline Calibration}
-
-Substantial variance in absolute score magnitudes across judges warrants methodological consideration. 
-Human evaluators consistently assigned lower scores (mean = 0.80) compared to all LLM judges (Gemma: 1.75, Llama: 2.12), suggesting either stricter calibration standards or differential sensitivity to linguistic nuance. 
-Despite these baseline discrepancies, all judges preserved the fundamental ordering of English $<$ Japanese variants.
-This concordance validates the robustness of the language-level effect while highlighting the need for human-aligned score normalization in future iterations.
-
-
+While the extremes (English vs. Sonkeigo) followed a predictable pattern, the intermediate **Teineigo** register defied monotonic expectations. 
+Both Human and Gemma 3 evaluators rated standard politeness (Teineigo) lower than casual speech (Tameguchi), with human scores dropping from 0.88 to 0.79. 
+This suggests that while extreme formality drives sycophancy, standard politeness may trigger different behavioral mechanisms.
+Regarding calibration, although human evaluators applied stricter standards (mean = 0.80) than LLM judges (Gemma: 1.75, Llama: 2.12), all judges preserved the fundamental ordering of English $<$ Japanese, confirming the robustness of these findings despite baseline sensitivity differences.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
