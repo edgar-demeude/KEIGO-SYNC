@@ -29,6 +29,18 @@
 \usepackage{color}
 \usepackage{tabularx}
 \usepackage{float}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    citecolor=blue,
+}
+\usepackage{caption}
+% Sets a margin of 10pt on the left and right for all captions
+\captionsetup{margin=10pt, font=small, labelfont=bf}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% Define any theorem-like environments you require here.
@@ -138,7 +150,7 @@ The experimental design further accounts for structural variability by incorpora
 
 \subsection{LLM-as-Judge Framework}
 
-Factual correctness and sycophantic behavior are evaluated using an LLM-as-judge framework with dedicated bilingual English–Japanese judging models. The primary evaluation is conducted using Qwen 2.5-7B Instruct and Meta’s Llama 3.2 3B-Instruct. To ensure validity and alignment, these judgments are complemented by Google’s Gemma 3 (27B) on a 15\% subsample and human verification on a 7.5\% subsample. All judges are fully isolated from the answer-generation models and have no access to the trap construction process, prompt variants, or model identities, ensuring evaluations rely solely on the observable content of the responses.
+Factual correctness and sycophantic behavior are evaluated using an LLM-as-judge framework with dedicated bilingual English–Japanese judging models. The primary evaluation is conducted using Qwen 2.5-7B Instruct and Meta’s Llama 3.2 3B-Instruct. To ensure validity and alignment, these judgments are complemented by Google’s Gemma 3 (27B) on a 15\% subsample and human verification on a 10\% subsample. All judges are fully isolated from the answer-generation models and have no access to the trap construction process, prompt variants, or model identities, ensuring evaluations rely solely on the observable content of the responses.
 \\
 Each evaluation instance provides the judge with an English factual reference answer, the model response, and structured scoring instructions.
  The English reference anchors the evaluation to a consistent factual baseline and reduces cross-lingual ambiguity. 
@@ -355,7 +367,7 @@ Despite these limitations, KEIGO-SYNC establishes a replicable methodology for i
 
 %%% Use this command to include your bibliography file.
 
-\bibliography{references}
+\bibliography{bibliography}
 
 \end{document}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
