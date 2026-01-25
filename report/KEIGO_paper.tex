@@ -4,8 +4,7 @@
 %%% Prepared by Ulle Endriss (version 1.0 of 2023-12-10)
 
 %%% To be used with the ECAI class file ecai.cls.
-%%% You also will need a bibliography file (such as mybibfile.bib).
-
+%%% You also will need a bibliography file 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%% Start your document with the \documentclass{} command.
@@ -98,10 +97,10 @@ on Factual Reliability in Japanese Large Language Models
 
 \section{Introduction}
 Sycophancy in large language models (LLMs)---the tendency to agree with user-stated beliefs 
-conflicting with verifiable facts---constitutes a persistent alignment challenge. 
-While existing research examines sycophantic behavior primarily in English, the role of 
+conflicting with verifiable facts---constitutes a persistent alignment challenge \cite{sharma2023towards}. 
+While existing research examines sycophantic behavior primarily in English \cite{armengol2024quantifying}, the role of 
 grammatical register as a systematic factor remains insufficiently explored, particularly in 
-high-context languages where politeness is grammatically encoded.
+high-context languages where politeness is grammatically encoded \cite{liang2022holistic}.
 \\
 KEIGO-SYNC introduces a controlled evaluation framework measuring the relationship between grammatical 
 politeness and sycophantic agreement using Japanese, where honorific speech (Keigo) encodes social deference through 
@@ -116,17 +115,17 @@ whether linguistic deference correlates with measurable changes in model agreeme
 The corpus comprises 60 prompts designed to isolate the effect of grammatical politeness on factual integrity. 
 To ensure diversity and comparability, the dataset integrates items from the Logical Fallacy Detection\cite{jin2022logicalfallacydetection} benchmark, 
 the ELEPHANT dataset, and original questions specifically developed for this study. These items are organized into 
-five thematic domains: education, health, logical fallacies, technology, and ethics, with topics restricted to 
-widely documented general knowledge to limit specialized knowledge biases.
+five thematic domains: education, health, logical fallacies, technology, and ethics, drawing on thematic categories established in benchmarks like MMLU \cite{hendrycks2020measuring} and the Logical Fallacy Detection dataset \cite{jin2022logicalfallacydetection}
+Topics are  restricted to widely documented general knowledge to limit specialized knowledge biases.
 \\
 All items follow a unified [Assertion] + [Question] template, formulated assertively and deliberately incorporating
- erroneous premises or reasoning biases to measure models' ability to maintain critical stance under linguistic
-  pressure. Originally written in English, all prompts were adapted by a native Japanese speaker to ensure semantic 
-  and pragmatic fidelity. Each item was instantiated across three Japanese registers: 
-  Tameguchi (informal), Teineigo (standard), and Sonkeigo (honorific). By treating politeness level as the sole 
-  independent variable, this design enables controlled analysis of how linguistic deference influences the rate 
-  of sycophantic agreement versus factual correction.
-  
+erroneous premises or reasoning biases to measure models' ability to maintain critical stance under linguistic
+pressure. Originally written in English, all prompts were adapted by a native Japanese speaker to ensure semantic 
+and pragmatic fidelity. Each item was instantiated across three Japanese registers: 
+Tameguchi (informal), Teineigo (standard), and Sonkeigo (honorific). By treating politeness level as the sole 
+independent variable, this design enables controlled analysis of how linguistic deference influences the rate 
+of sycophantic agreement versus factual correction.
+
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Experimental Setup}
@@ -134,18 +133,7 @@ All items follow a unified [Assertion] + [Question] template, formulated asserti
 \subsection{Model Selection and Configuration}
 
 
-To establish a baseline for evaluating sycophantic behavior across diverse linguistic frameworks, we selected a representative suite of Large Language Models (LLMs) characterized by varying architectural designs and regional development origins. 
-The selection process was governed by three primary independent variables: geographic-linguistic origin, parameter scale, and the specific alignment methodologies employed during the training of the response-generation models.
-\\
-To examine the influence of cultural and linguistic priors embedded in training corpora, the study contrasts models of Asian origin, specifically Qwen 2.5 (7B) and GLM-4.6V-Flash, with those of Western origin, namely Gemma 3 (27B) and Mistral v0.3 (7B).
- This geographic stratification facilitates an analysis of whether models developed within high-context linguistic environments demonstrate distinct sycophantic patterns compared to those trained predominantly on Western data when subjected to complex Japanese honorific constraints.
-\\
-The experimental design further accounts for structural variability by incorporating a spectrum of model capacities ranging from 7B to 27B parameters.
- This gradient enables an investigation into the correlation between parameter scale and a model’s capacity to maintain factual consistency under social or grammatical pressure. 
- A critical component of this protocol is the inclusion of the Mistral 7B base model, which serves as a non-aligned baseline as it has not undergone Reinforcement Learning from Human Feedback (RLHF).
- The use of a non-RLHF model allows for the isolation of sycophancy as a potential emergent property of alignment processes designed to prioritize user satisfaction over factual adherence. 
- To ensure statistical rigor and reproducibility, all inferences were conducted with a temperature setting of 0.5, and each prompt was subjected to N=3 independent iterations to mitigate the impact of stochastic variance.
-
+We evaluated models of varying origins and scales: Asian-origin (Qwen 2.5 7B, GLM-4.6V-Flash) versus Western-origin (Gemma 3 27B, Mistral v0.3 7B), spanning 7B to 27B parameters. Mistral 7B base served as a non-RLHF baseline. All inferences used temperature 0.5 with N=3 iterations.
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{LLM-as-Judge Framework}
@@ -162,33 +150,13 @@ Each evaluation instance provides the judge with an English factual reference an
 \subsection{Evaluation Metrics}
 
 \subsubsection{LLM-as-Judge}
-Sycophancy is assessed using a structured evaluation prompt that instructs the judge to quantify the extent to which a model response prioritizes agreement, flattery, or face-preserving behavior over objective and factually accurate content. 
-The prompt operationalizes sycophancy along three dimensions derived from the ELEPHANT framework\cite{cheng2025elephant}: regressive sycophancy, validation sycophancy, and framing sycophancy.
-\textbf{Regressive sycophancy} captures the degree to which the model sacrifices factual accuracy or independent reasoning to conform to the user’s incorrect beliefs. 
-\textbf{Validation sycophancy} measures the extent to which the response emphasizes emotional reassurance or praise over objective guidance. 
-\textbf{Framing sycophancy} evaluates whether the model uncritically accepts the user’s assumptions or framing rather than examining or correcting them when necessary. 
-Each dimension is scored on a five-point scale, with higher values corresponding to greater prioritization of user appeasement over truthfulness. 
-While the prompt asks judges to provide a holistic overall rating, the final sycophancy score used in our analysis is calculated as the arithmetic mean of these three dimensional scores, ensuring a balanced representation of the behavior.
-\\
-The prompt includes explicit instructions to compare the model response against a provided English reference answer, treated as the factual ground truth. 
-Judges are guided to distinguish between responses that accurately correct or challenge misleading statements, partially align with the ground truth, or fully adopt erroneous premises. 
-Brief politeness or minor empathetic language is explicitly excluded from high sycophancy ratings, whereas repeated validation, excessive agreement, or uncritical adoption of misleading premises is penalized. 
-To ensure data consistency and valid formatting, we employ a separate instance of Qwen Instruct to parse the raw output from the judges. This parsing step extracts the three dimension scores, the computed average, and the concise textual rationale (two to four sentences) into a clean, standardized JSON format.
-This structured workflow ensures that evaluations are reproducible, interpretable, and aligned with a clearly defined operationalization of sycophancy.
-        
+Sycophancy is assessed using a structured evaluation prompt operationalizing three dimensions derived from the ELEPHANT framework\cite{cheng2025elephant}: \textbf{regressive sycophancy} (sacrificing factual accuracy to conform to user's incorrect beliefs), \textbf{validation sycophancy} (emphasizing emotional reassurance over objective guidance), and \textbf{framing sycophancy} (uncritically accepting user's assumptions rather than correcting them). Each dimension is scored 1--5, with higher values indicating greater user appeasement over truthfulness. The final sycophancy score is calculated as the arithmetic mean of these three dimensions.
+Judges compare model responses against English reference answers treated as factual ground truth, distinguishing between responses that correct misleading statements, partially align with truth, or fully adopt erroneous premises. Brief politeness is excluded from high sycophancy ratings, whereas repeated validation or uncritical adoption of misleading premises is penalized. A separate Qwen Instruct instance parses judge outputs, extracting the three dimension scores, computed average, and textual rationale into standardized JSON format, ensuring reproducible and interpretable evaluations.
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsubsection{Quantitative Metrics}
-To quantify the trade-off between social deference and factual accuracy, the system employs a custom metric engine that computes two primary independent variables. 
-The first, the Formality Ratio, measures the degree of politeness in the model’s response. 
-It is normalized between 0.0 and 1.0 and calculated using rule-based detection of specific Japanese honorific markers. 
-The scoring assigns the highest weight to Sonkeigo verbs (e.g., meshiagaru, zonjimasu, 1.0), moderate weight to standard Teineigo copulas (desu/masu, 0.6), and low weight to casual Tameguchi particles (daro, jan, 0.2). 
-The second variable, Factual Adherence, quantifies the semantic alignment of the response with the factual baseline. 
-This is computed by embedding the Japanese model response using Google’s Gemini Embedding 001 model and calculating the cosine similarity against the embedding of the corresponding English ground truth.
-\\
-By correlating the Formality Ratio with Factual Adherence, the framework identifies instances of sycophantic drift, defined as cases in which the model sacrifices factual accuracy to comply with the grammatical constraints of high-context politeness. 
-This approach enables a precise, quantitative assessment of how increasing levels of linguistic deference influence the model’s ability to maintain truthfulness.
-
+To quantify the trade-off between social deference and factual accuracy, the system employs a custom metric engine computing two primary variables. The \textbf{Formality Ratio} measures response politeness (normalized 0.0--1.0) via rule-based detection of Japanese honorific markers: Sonkeigo verbs (e.g., \textit{meshiagaru}, \textit{zonjimasu}, 1.0), Teineigo copulas (\textit{desu/masu}, 0.6), and Tameguchi particles (\textit{daro}, \textit{jan}, 0.2). The \textbf{Factual Adherence} quantifies semantic alignment by embedding the Japanese response using Gemini Embedding 001 and calculating cosine similarity against the English ground truth embedding.
+By correlating Formality Ratio with Factual Adherence, the framework identifies sycophantic drift---cases where models sacrifice factual accuracy to comply with high-context politeness constraints---enabling precise quantitative assessment of how linguistic deference influences truthfulness.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -252,17 +220,16 @@ The empirical evaluation reveals a consistent relationship between grammatical p
 
 The transition from English to Japanese emerged as the strongest predictor of sycophantic behavior. 
 The mean absolute difference between the English baseline and Japanese variants ($\Delta_{\text{EN}\rightarrow\text{JP}} = 0.47$ for Gemma) was over twice the magnitude of internal register variations, indicating that the language shift itself drives the bulk of the behavioral change.
-
-\paragraph{The "Sonkeigo" Effect.}
+\\
+\textbf{The "Sonkeigo" Effect.}
 Crucially, the hyper-formal \textbf{Sonkeigo} register consistently yielded the highest sycophancy scores across all evaluation conditions, validating the hypothesized politeness-truthfulness trade-off. 
 Gemma 3-27B recorded a 42.4\% increase from the English baseline to Sonkeigo, while Llama 3.2-3B showed a 21.9\% increase. 
 Most notably, human evaluators demonstrated a 45.2\% spike, confirming that excessive grammatical deference correlates strongly with increased agreement.
-
-\paragraph{Non-Linearity and Calibration.}
+\\
+\textbf{Non-Linearity and Calibration.}
 While the extremes (English vs. Sonkeigo) followed a predictable pattern, the intermediate \textbf{Teineigo} register defied monotonic expectations. 
 Both Human and Gemma 3 evaluators rated standard politeness (Teineigo) lower than casual speech (Tameguchi), with human scores dropping from 0.88 to 0.79. 
 Regarding calibration, although human evaluators applied stricter standards (mean = 0.80) than LLM judges (Gemma: 1.75, Llama: 2.12), all judges preserved the fundamental ordering of English $<$ Japanese, confirming the robustness of these findings.
-
 \begin{table}[H]
     \centering
     \small 
@@ -325,6 +292,7 @@ By isolating honorific register as an independent variable while maintaining sem
 Our results demonstrate two primary phenomena. 
 First, a consistent cross-linguistic effect emerges whereby Japanese prompts elicit systematically higher sycophancy scores than semantically equivalent English prompts, with language transition effects ($\Delta_{\text{EN}\rightarrow\text{JP}}$) approximately 2--3 times larger than maximum intra-Japanese register differences. 
 Second, while Sonkeigo (honorific) register exhibited the highest sycophancy scores in all of our judges conditions, the gradation across Japanese registers (Tameguchi, Teineigo, Sonkeigo) displayed non-monotonic patterns suggesting complex interactions between grammatical formality, cultural priors embedded in training data, and model-specific alignment objectives.
+This aligns with recent findings that Japanese linguistic formalities can significantly alter the quality and accuracy of AI-generated technical content \cite{matsui2024honorific}.
 
 \subsection{Limitations and Methodological Constraints}
 
@@ -367,7 +335,7 @@ Despite these limitations, KEIGO-SYNC establishes a replicable methodology for i
 
 %%% Use this command to include your bibliography file.
 
-\bibliography{bibliography}
+\bibliography{references}
 
 \end{document}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
