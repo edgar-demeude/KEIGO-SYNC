@@ -141,6 +141,12 @@ To change the model, number of iterations, or target run:
 
 ## 🚀 Typical Run Scenarios
 
+### 0. Extract the `data.zip` file for data folder before running the pipeline
+
+```
+unzip data.zip -d data
+```
+
 ### 1. Full pipeline from scratch (responses → embeddings → metrics → final JSON)
 
 In `src/main.py`, set:
